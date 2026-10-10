@@ -54,6 +54,7 @@ function fillDriverSelects() {
 
 
 
+
 function renderStats() {
   const totalWins = drivers.reduce(
     (sum, d) => sum + (Number(d.total_wins) || 0), 0
@@ -73,35 +74,9 @@ function renderStats() {
 
   if ($('statWins')) $('statWins').textContent = totalWins;
   if ($('statStarts')) $('statStarts').textContent = totalStarts;
-
-  // DNF kartını kaldır
-  const dnfEl = $('statDnfs');
-  if (dnfEl) {
-    const card = dnfEl.closest('.stat-card, .stat-item, .stat');
-    if (card) card.remove();
-    else dnfEl.remove();
-  }
-
-  // Podiums ve poles için HTML'de bu ID'ler varsa onları da güncelle
   if ($('statPodiums')) $('statPodiums').textContent = totalPodiums;
   if ($('statPoles')) $('statPoles').textContent = totalPoles;
-}
 
-
-  const wins = finishedRaces.filter(r => Number(r.position) === 1).length;
-
-  // Start sayısı: DNS olmayan tüm yarış kayıtları
-  const starts = races.filter(r =>
-    String(r.status || 'finished').toLowerCase() !== 'dns'
-  ).length;
-
-  const winsEl = $('statWins');
-  const startsEl = $('statStarts');
-
-  if (winsEl) winsEl.textContent = wins;
-  if (startsEl) startsEl.textContent = starts;
-
-  // DNF kartını kaldır
   const dnfEl = $('statDnfs');
   if (dnfEl) {
     const card = dnfEl.closest('.stat-card, .stat-item, .stat');
@@ -109,7 +84,6 @@ function renderStats() {
     else dnfEl.remove();
   }
 }
-
 
 function renderDrivers() {
   $('driverCards').innerHTML = drivers.length
