@@ -1,0 +1,175 @@
+<!doctype html>
+<html lang="tr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#090a0c">
+  <meta name="description" content="Crescent Motorsport — sim racing, endurance, clean driving.">
+  <title>Crescent Motorsport</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <div class="topline"></div>
+  <header class="site-header">
+    <a class="brand" href="#top" aria-label="Crescent Motorsport ana sayfa">
+      <span class="brand-mark" aria-hidden="true"><span></span></span>
+      <span class="brand-copy"><strong>CRESCENT</strong><small>MOTORSPORT</small></span>
+    </a>
+    <nav class="desktop-nav" aria-label="Ana menü">
+      <a href="#races">YARIŞLAR</a><a href="#drivers">PİLOTLAR</a><a href="#lap-times">TUR ZAMANLARI</a><a href="#schedule">TAKVİM</a>
+    </nav>
+    <button id="loginOpen" class="login-button" type="button">GİRİŞ <span aria-hidden="true">↗</span></button>
+  </header>
+
+  <main id="top">
+    <section class="hero">
+      <div class="hero-copy">
+        <p class="eyebrow"><span class="live-dot"></span> SIM RACING TEAM · EST. 2026</p>
+        <h1>BUILT ON PACE.<br><span>DRIVEN BY</span> PASSION.</h1>
+        <p class="hero-desc">Endurance ruhu. Temiz yarış. Sürekli gelişim.<br>Her turda daha ileri.</p>
+        <a class="text-link" href="#races">SON YARIŞLARI KEŞFET <span>↘</span></a>
+      </div>
+      <div class="hero-art" aria-label="Crescent Motorsport grafik tasarımı">
+        <div class="art-grid"></div><div class="orbit orbit-one"></div><div class="orbit orbit-two"></div>
+        <div class="hero-number">14</div><div class="hero-slash"></div>
+        <div class="art-caption"><span>ENDURANCE</span><span>NO SHORTCUTS.</span></div>
+      </div>
+    </section>
+
+    <section class="stats-section" aria-label="Takım istatistikleri">
+      <div class="section-kicker"><span>01 / TEAM OVERVIEW</span><span>MANUALLY LOGGED · LIVE TOTALS</span></div>
+      <div class="stats-grid">
+        <article class="stat-card"><span class="stat-label">TOTAL WINS</span><strong id="statWins">—</strong><span class="stat-foot">1. sıra bitirişleri</span></article>
+        <article class="stat-card"><span class="stat-label">TOTAL STARTS</span><strong id="statStarts">—</strong><span class="stat-foot">Kaydedilen yarışlar</span></article>
+        <article class="stat-card"><span class="stat-label">TOTAL DNFs</span><strong id="statDnfs">—</strong><span class="stat-foot">Tamamlanamayan yarışlar</span></article>
+        <article class="stat-card stat-card-note"><span class="stat-label">THE MINDSET</span><strong>EVERY<br>SECOND.</strong><span class="stat-foot">Pace with purpose.</span></article>
+      </div>
+    </section>
+
+    <section id="races" class="races-section">
+      <div class="section-heading"><div><p class="eyebrow">02 / RACE LOG</p><h2>LATEST <span>RACES</span></h2></div><p class="heading-note">Tüm pilotların bireysel yarış kayıtları.<br>En yeni kayıtlar en üstte.</p></div>
+      <div class="filters">
+        <label class="filter-label">PİLOT<select id="driverFilter"><option value="all">Tüm pilotlar</option></select></label>
+        <label class="filter-label">SINIF<select id="classFilter"><option value="all">Tüm sınıflar</option><option>Hypercar</option><option>LMP2</option><option>LMP3</option><option>GT3</option><option>Other</option></select></label>
+        <label class="filter-label search-filter">ARA<input id="searchFilter" type="search" placeholder="Araç, pist, oyun…"></label>
+      </div>
+      <div id="raceList" class="race-list"><div class="empty-state"><span class="empty-icon">↗</span><h3>İLK KAYITLAR BEKLENİYOR</h3><p>Yarış sonuçları yönetim panelinden elle eklenecek.<br>Burada sahte sonuç gösterilmiyor.</p></div></div>
+      <p id="raceCount" class="race-count">0 KAYIT</p>
+    </section>
+
+    <section id="drivers" class="drivers-section">
+      <div class="section-heading"><div><p class="eyebrow">03 / THE LINE-UP</p><h2>OUR <span>DRIVERS</span></h2></div><p class="heading-note">Dört pilot. Tek takım ruhu.</p></div>
+      <div id="driverCards" class="driver-grid"></div>
+    </section>
+
+    <section id="lap-times" class="races-section">
+      <div class="section-heading"><div><p class="eyebrow">04 / DRIVER PACE</p><h2>BEST <span>LAPS</span></h2></div><p class="heading-note">Pilotların elle girilen tur zamanları.</p></div>
+      <div id="lapTimeList" class="race-list"><div class="empty-state"><h3>TUR ZAMANI KAYDI YOK</h3><p>Tur zamanları admin panelinden eklenir.</p></div></div>
+    </section>
+    <section id="schedule" class="drivers-section">
+      <div class="section-heading"><div><p class="eyebrow">05 / RACE CALENDAR</p><h2>UPCOMING <span>RACES</span></h2></div><p class="heading-note">Takvim ve yarış planı.</p></div>
+      <div id="scheduleList" class="race-list"><div class="empty-state"><h3>TAKVİM BOŞ</h3><p>Yarış tarihlerini yönetim panelinden ekleyebilirsin.</p></div></div>
+    </section>
+    <section id="about" class="about-section"><p class="eyebrow">04 / OUR PRINCIPLES</p><h2>RACE HARD.<br><span>RACE CLEAN.</span></h2><p>Crescent Motorsport, sim racing ve endurance yarışlarına odaklanan bir ekip. Hedefimiz yalnızca hızlı olmak değil; saygılı yarışmak, sınırlarımızı geliştirmek ve birlikte ilerlemek.</p><div class="principles"><span>01 — DISCIPLINE</span><span>02 — RESPECT</span><span>03 — PROGRESS</span></div></section>
+  </main>
+
+  <footer class="site-footer"><a class="footer-brand" href="#top">CRESCENT MOTORSPORT <span>◒</span></a><span>BUILT ON PACE. DRIVEN BY PASSION.</span><span>© <span id="year"></span> CRESCENT MOTORSPORT</span></footer>
+
+  <div id="loginModal" class="modal" hidden>
+    <div class="modal-backdrop" data-close-modal></div>
+    <section class="modal-card" role="dialog" aria-modal="true" aria-labelledby="loginTitle">
+      <button class="modal-close" type="button" data-close-modal aria-label="Kapat">×</button>
+      <p class="eyebrow">RESTRICTED ACCESS</p><h2 id="loginTitle">ADMIN <span>LOGIN</span></h2>
+      <p class="modal-intro">Yönetim paneline erişmek için yetkili hesabınla giriş yap.</p>
+      <form id="loginForm"><label>E-POSTA<input id="loginEmail" type="email" autocomplete="username" required placeholder="admin@..."></label><label>ŞİFRE<input id="loginPassword" type="password" autocomplete="current-password" required placeholder="Şifren"></label><button class="primary-button" type="submit">GİRİŞ YAP <span>↗</span></button><p id="loginMessage" class="form-message" role="status"></p></form>
+      <p class="security-note">Admin yetkisi sunucu tarafında doğrulanır. Sadece giriş yapmak yönetim izni vermez.</p>
+    </section>
+  </div>
+
+  <section id="adminPanel" class="admin-panel" hidden>
+    <div class="admin-top"><div><p class="eyebrow">PRIVATE AREA</p><h2>CONTROL <span>ROOM</span></h2><p class="admin-subtitle">Sürücüler, yarışlar, tur zamanları ve takvim tamamen senin kontrolünde.</p></div><button id="logoutButton" class="outline-button" type="button">ÇIKIŞ YAP</button></div>
+    <div class="admin-tabs">
+      <button class="admin-tab active" data-admin-tab="driver" type="button">PİLOTLAR</button>
+      <button class="admin-tab" data-admin-tab="race" type="button">YARIŞLAR</button>
+      <button class="admin-tab" data-admin-tab="lap" type="button">TUR ZAMANLARI</button>
+      <button class="admin-tab" data-admin-tab="schedule" type="button">TAKVİM</button>
+    </div>
+    <div id="adminDriverView" class="admin-view">
+      <h3 class="admin-form-title">PİLOT EKLE / DÜZENLE</h3>
+      <form id="driverForm" class="admin-form">
+        <input id="driverId" type="hidden">
+        <label>PİLOT ADI<input id="driverName" required placeholder="Pilot adı"></label>
+        <label>YARIŞ NUMARASI<input id="driverNumber" type="number" min="0" placeholder="14"></label>
+        <label>ROL / KISA NOT<input id="driverTag" placeholder="Driver"></label>
+        <label>KULLANDIĞI ARAÇ<input id="driverCar" placeholder="Peugeot 9X8"></label>
+        <label class="full-width">ARAÇ FOTOĞRAFI LİNKİ (İSTEĞE BAĞLI)<input id="driverCarImage" type="url" placeholder="https://..."></label>
+        <div class="form-actions full-width"><button id="driverSaveButton" class="primary-button" type="submit">PİLOTU KAYDET <span>↗</span></button><button id="cancelDriverEdit" class="outline-button" type="button" hidden>İPTAL</button><p id="driverMessage" class="form-message" role="status"></p></div>
+      </form>
+      <div class="admin-records"><h3>MEVCUT PİLOTLAR</h3><div id="adminDriverList"></div></div>
+    </div>
+    <div id="adminRaceView" class="admin-view" hidden>
+      <h3 class="admin-form-title">YARIŞ EKLE / DÜZENLE</h3>
+      <form id="raceForm" class="admin-form">
+        <input id="raceId" type="hidden">
+        <label>PİLOT<select id="raceDriver" required></select></label>
+        <label>TARİH<input id="raceDate" type="date" required></label>
+        <label>OYUN<input id="raceGame" required placeholder="Assetto Corsa Competizione"></label>
+        <label>SINIF<select id="raceClass" required><option>Hypercar</option><option>LMP2</option><option>LMP3</option><option>GT3</option><option>Other</option></select></label>
+        <label>ARAÇ<input id="raceCar" required placeholder="Peugeot 9X8"></label>
+        <label>PİST<input id="raceTrack" required placeholder="Spa-Francorchamps"></label>
+        <label>BİTİRİŞ DURUMU<select id="raceStatus" required><option value="finished">Tamamladı</option><option value="dnf">DNF</option><option value="dns">DNS</option></select></label>
+        <label>POZİSYON<input id="racePosition" type="number" min="1" placeholder="1"></label>
+        <label>EN İYİ TUR<input id="raceLap" placeholder="2:03.640"></label>
+        <label>LFM / SONUÇ LİNKİ<input id="raceUrl" type="url" placeholder="https://..."></label>
+        <label>YARIŞ FOTOĞRAFI LİNKİ<input id="raceImage" type="url" placeholder="https://..."></label>
+        <label class="full-width">NOTLAR<textarea id="raceNotes" rows="2" placeholder="İsteğe bağlı kısa not"></textarea></label>
+        <div class="form-actions full-width"><button class="primary-button" type="submit">YARIŞI KAYDET <span>↗</span></button><button id="cancelEdit" class="outline-button" type="button" hidden>İPTAL</button><p id="raceMessage" class="form-message" role="status"></p></div>
+      </form>
+      <div class="admin-records"><h3>YARIŞ KAYITLARI</h3><div id="adminRaceList"></div></div>
+    </div>
+    <div id="adminLapView" class="admin-view" hidden>
+      <h3 class="admin-form-title">PİLOT TUR ZAMANI EKLE / DÜZENLE</h3>
+      <form id="lapForm" class="admin-form">
+        <input id="lapId" type="hidden">
+        <label>PİLOT<select id="lapDriver" required></select></label>
+        <label>TARİH<input id="lapDate" type="date"></label>
+        <label>OYUN<input id="lapGame" required placeholder="Assetto Corsa"></label>
+        <label>SINIF<select id="lapClass" required><option>Hypercar</option><option>LMP2</option><option>LMP3</option><option>GT3</option><option>Other</option></select></label>
+        <label>ARAÇ<input id="lapCar" required placeholder="Peugeot 9X8"></label>
+        <label>PİST<input id="lapTrack" required placeholder="Daytona"></label>
+        <label>TUR ZAMANI<input id="lapTime" required placeholder="1:35.726"></label>
+        <label>FOTOĞRAF LİNKİ (İSTEĞE BAĞLI)<input id="lapImage" type="url" placeholder="https://..."></label>
+        <label class="full-width">NOTLAR<textarea id="lapNotes" rows="2" placeholder="Koşullar, setup, notlar…"></textarea></label>
+        <div class="form-actions full-width"><button class="primary-button" type="submit">TUR ZAMANINI KAYDET <span>↗</span></button><button id="cancelLapEdit" class="outline-button" type="button" hidden>İPTAL</button><p id="lapMessage" class="form-message" role="status"></p></div>
+      </form>
+      <div class="admin-records"><h3>TUR ZAMANI KAYITLARI</h3><div id="adminLapList"></div></div>
+    </div>
+    <div id="adminScheduleView" class="admin-view" hidden>
+      <h3 class="admin-form-title">YARIŞ TAKVİMİ EKLE / DÜZENLE</h3>
+      <form id="scheduleForm" class="admin-form">
+        <input id="scheduleId" type="hidden">
+        <label>YARIŞ / ETKİNLİK ADI<input id="scheduleName" required placeholder="LFM Daily Race"></label>
+        <label>TARİH<input id="scheduleDate" type="date" required></label>
+        <label>SAAT<input id="scheduleTime" type="time"></label>
+        <label>OYUN<input id="scheduleGame" placeholder="Assetto Corsa Competizione"></label>
+        <label>SINIF<select id="scheduleClass"><option>Hypercar</option><option>LMP2</option><option>LMP3</option><option>GT3</option><option>Other</option></select></label>
+        <label>PİST<input id="scheduleTrack" placeholder="Spa-Francorchamps"></label>
+        <label>PİLOT / KATILIMCI<input id="scheduleDrivers" placeholder="Ege, Efe"></label>
+        <label>ARAÇ<input id="scheduleCar" placeholder="İsteğe bağlı"></label>
+        <label>KAYIT / BİLGİ LİNKİ<input id="scheduleUrl" type="url" placeholder="https://..."></label>
+        <label class="full-width">NOTLAR<textarea id="scheduleNotes" rows="2" placeholder="İsteğe bağlı açıklama"></textarea></label>
+        <div class="form-actions full-width"><button class="primary-button" type="submit">TAKVİME KAYDET <span>↗</span></button><button id="cancelScheduleEdit" class="outline-button" type="button" hidden>İPTAL</button><p id="scheduleMessage" class="form-message" role="status"></p></div>
+      </form>
+      <div class="admin-records"><h3>TAKVİM KAYITLARI</h3><div id="adminScheduleList"></div></div>
+    </div>
+    <p class="admin-warning">Tüm içerikler admin panelinden elle yönetilir. Değişiklikler Supabase veritabanına kaydedilir ve ziyaretçilere yansır. Önce README.md kurulumunu tamamla.</p>
+  </section>
+
+  <div id="raceModal" class="modal" hidden><div class="modal-backdrop" data-close-race></div><section class="modal-card race-detail-card" role="dialog" aria-modal="true" aria-labelledby="raceDetailTitle"><button class="modal-close" type="button" data-close-race aria-label="Kapat">×</button><div id="raceDetailContent"></div></section></div>
+  <div id="toast" class="toast" role="status" aria-live="polite"></div>
+  <script type="module" src="app.js"></script>
+</body>
+</html>
