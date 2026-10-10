@@ -52,11 +52,34 @@ function fillDriverSelects() {
   renderDrivers();
 }
 
+
 function renderStats() {
-  $('statWins').textContent = races.filter(r => r.status === 'finished' && Number(r.position) === 1).length;
-  $('statStarts').textContent = races.filter(r => r.status !== 'dns').length;
-  $('statDnfs').textContent = races.filter(r => r.status === 'dnf').length;
+  const finishedRaces = races.filter(r =>
+    String(r.status || 'finished').toLowerCase() === 'finished'
+  );
+
+  const wins = finishedRaces.filter(r => Number(r.position) === 1).length;
+
+  // Start sayısı: DNS olmayan tüm yarış kayıtları
+  const starts = races.filter(r =>
+    String(r.status || 'finished').toLowerCase() !== 'dns'
+  ).length;
+
+  const winsEl = $('statWins');
+  const startsEl = $('statStarts');
+
+  if (winsEl) winsEl.textContent = wins;
+  if (startsEl) startsEl.textContent = starts;
+
+  // DNF kartını kaldır
+  const dnfEl = $('statDnfs');
+  if (dnfEl) {
+    const card = dnfEl.closest('.stat-card, .stat-item, .stat');
+    if (card) card.remove();
+    else dnfEl.remove();
+  }
 }
+
 
 function renderDrivers() {
   $('driverCards').innerHTML = drivers.length
