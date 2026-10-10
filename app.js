@@ -21,9 +21,31 @@ function fillDriverSelects(){
   renderDrivers();
 }
 function renderStats(){ $('statWins').textContent=races.filter(r=>r.status==='finished'&&Number(r.position)===1).length; $('statStarts').textContent=races.filter(r=>r.status!=='dns').length; $('statDnfs').textContent=races.filter(r=>r.status==='dnf').length; }
+
 function renderDrivers(){
-  $('driverCards').innerHTML=drivers.length?drivers.map(d=>{const own=races.filter(r=>String(r.driver_id)===String(d.id));const wins=own.filter(r=>r.status==='finished'&&Number(r.position)===1).length;return `<article class="driver-card" data-number="${safe(d.number??'—')}">${d.car_image_url?`<img class="driver-car-image" src="${safe(d.car_image_url)}" alt="${safe(d.name)} — ${safe(d.main_car||'araç')}" loading="lazy" onerror="this.hidden=true">`:''}<div class="driver-number">${d.number!==null&&d.number!==undefined&&d.number!==''?`#${safe(d.number)}`:'—'}</div><div class="driver-name">${safe(d.name)}</div><div class="driver-tag">${safe(d.tag||'Driver')}</div>${d.main_car?`<div class="driver-main-car">${safe(d.main_car)}</div>`:''}<div class="driver-record">${own.filter(r=>r.status!=='dns').length} starts · ${wins} wins</div></article>`}).join(''):empty('PİLOTLAR EKLENMEDİ','Pilotlar admin panelinden eklenir.');
+  $('driverCards').innerHTML = drivers.length
+    ? drivers.map(d => {
+        const starts = Number(d.total_starts) || 0;
+        const wins = Number(d.total_wins) || 0;
+        const podiums = Number(d.total_podiums) || 0;
+        const poles = Number(d.total_poles) || 0;
+
+        return `<article class="driver-card" data-number="${safe(d.number ?? '—')}">
+          ${d.car_image_url ? `<img class="driver-car-image" src="${safe(d.car_image_url)}" alt="${safe(d.name)} — ${safe(d.main_car || 'araç')}" loading="lazy" onerror="this.hidden=true">` : ''}
+          <div class="driver-number">${d.number !== null && d.number !== undefined && d.number !== '' ? `#${safe(d.number)}` : '—'}</div>
+          <div class="driver-name">${safe(d.name)}</div>
+          <div class="driver-tag">${safe(d.tag || 'Driver')}</div>
+          ${d.main_car ? `<div class="driver-main-car">${safe(d.main_car)}</div>` : ''}
+          <div class="driver-record">
+            ${starts} starts · ${wins} wins<br>
+            ${podiums} podiums · ${poles} poles
+          </div>
+          ${d.lfm_profile_url ? `<a class="text-link" href="${safe(d.lfm_profile_url)}" target="_blank" rel="noopener noreferrer">LFM PROFİLİ ↗</a>` : ''}
+        </article>`;
+      }).join('')
+    : empty('PİLOTLAR EKLENMEDİ', 'Pilotlar admin panelinden eklenir.');
 }
+
 function renderRaces(){
  const driver=$('driverFilter').value,cls=$('classFilter').value,term=$('searchFilter').value.trim().toLowerCase();
  const filtered=[...races].sort((a,b)=>String(b.race_date||'').localeCompare(String(a.race_date||''))).filter(r=>(driver==='all'||String(r.driver_id)===driver)&&(cls==='all'||r.race_class===cls)&&(!term||[r.game,r.car,r.track,driverName(r.driver_id),r.race_class].some(v=>String(v||'').toLowerCase().includes(term))));
