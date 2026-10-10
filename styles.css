@@ -734,3 +734,80 @@ select { cursor: pointer; }
 .past-events[open] > summary::after { content: " ▴"; }
 .past-events > summary:hover { background: #15171b; color: #dce0e4; }
 .past-events > .race-card { margin-top: 10px; opacity: .8; }
+
+/* ===== Aşama 2: fotoğraflı tur zamanı kartı ve fotoğraf kutusu ===== */
+
+.lap-card.lap-with-photo {
+  grid-template-columns: minmax(0, 1fr) minmax(220px, 320px);
+  align-items: center;
+  gap: 22px;
+}
+.lap-info {
+  display: grid;
+  grid-template-columns: minmax(96px, auto) minmax(0, 1fr) auto;
+  gap: 20px;
+  align-items: center;
+  min-width: 0;
+}
+
+.record-photo {
+  position: relative;
+  display: block;
+  width: 100%;
+  min-height: 120px;
+  margin: 0;
+  padding: 0;
+  overflow: hidden;
+  border: 1px solid var(--line);
+  background: #08090a;
+  cursor: zoom-in;
+}
+.record-photo.is-loaded { min-height: 0; }
+.record-photo img {
+  display: block;
+  width: auto;
+  max-width: 100%;
+  height: auto;
+  max-height: 280px;
+  margin: 0 auto;
+}
+.record-photo:hover { border-color: #6b7077; }
+.record-photo:focus-visible { outline: 2px solid #f1f2f3; outline-offset: 2px; }
+
+.photo-failed {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 22px 14px;
+  color: #9ba0a7;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 1px;
+  text-align: center;
+  text-decoration: none;
+  cursor: default;
+}
+a.photo-failed { cursor: pointer; }
+a.photo-failed:hover { color: #dfe1e4; }
+
+.race-detail-card .record-photo { margin-top: 18px; }
+.race-detail-card .record-photo img { max-height: 380px; }
+
+@media (max-width: 900px) {
+  .lap-card.lap-with-photo { grid-template-columns: minmax(0, 1fr) 220px; gap: 16px; }
+  .lap-info { grid-template-columns: minmax(78px, auto) minmax(0, 1fr) 115px; gap: 13px; }
+}
+
+@media (max-width: 650px) {
+  .lap-card.lap-with-photo { grid-template-columns: minmax(0, 1fr); }
+  .lap-info { grid-template-columns: minmax(58px, auto) minmax(0, 1fr); gap: 12px; }
+}
+
+/* Fotoğrafsız tur zamanı kartı: uzun süre yazısı pilot adının üstüne binmesin */
+.lap-card:not(.lap-with-photo) { grid-template-columns: minmax(100px, auto) minmax(0, 1fr) 145px; }
+@media (max-width: 900px) {
+  .lap-card:not(.lap-with-photo) { grid-template-columns: minmax(78px, auto) minmax(0, 1fr) 115px; }
+}
+@media (max-width: 650px) {
+  .lap-card:not(.lap-with-photo) { grid-template-columns: minmax(58px, auto) minmax(0, 1fr); }
+}

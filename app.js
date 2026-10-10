@@ -79,6 +79,147 @@ const safeUrl = value => {
   }
 };
 
+/* ===== KLASMAN (SINIF) SİSTEMİ ===== */
+
+/* Hazır klasmanlar. Yeni klasmanlar yazılınca listeye otomatik eklenir. */
+const PRESET_CLASSES = ['Hypercar', 'LMP2', 'LMP3', 'GT3', 'Formula 1', 'Other'];
+const CUSTOM_CLASS_VALUE = '__custom__';
+
+const cleanClass = value => String(value ?? '').trim().replace(/\s+/g, ' ');
+const classKey = value => cleanClass(value).toLowerCase();
+
+/* Hazır + veritabanında kullanılan tüm klasmanlar (büyük/küçük harf farkı tek sayılır) */
+function knownClasses() {
+  const seen = new Map();
+
+  PRESET_CLASSES.forEach(name => seen.set(classKey(name), name));
+
+  const extras = new Map();
+  [...races, ...lapTimes, ...schedule].forEach(item => {
+    const name = cleanClass(item.race_class);
+    const key = classKey(name);
+    if (name && !seen.has(key) && !extras.has(key)) extras.set(key, name);
+  });
+
+  const sortedExtras = [...extras.values()].sort((a, b) => a.localeCompare(b, 'tr'));
+  return [...seen.values(), ...sortedExtras];
+}
+
+/* Yazılan adı, zaten var olan klasmanla aynıysa onun yazımına çevirir ("gt3  cup" → "GT3 Cup") */
+function canonicalClass(value) {
+  const cleaned = cleanClass(value);
+  if (!cleaned) return '';
+  const match = knownClasses().find(name => classKey(name) === classKey(cleaned));
+  return match || cleaned;
+}
+
+function syncClassCustom(id) {
+  const isCustom = $(id).value === CUSTOM_CLASS_VALUE;
+  const input = $(id + 'Custom');
+
+  input.hidden = !isCustom;
+  input.required = isCustom;
+  if (!isCustom) input.value = '';
+}
+
+function getClassValue(id) {
+  const select = $(id);
+
+  if (select.value === CUSTOM_CLASS_VALUE) {
+    return canonicalClass($(id + 'Custom').value);
+  }
+
+  return select.value ? canonicalClass(select.value) : '';
+}
+
+function setClassValue(id, value) {
+  const select = $(id);
+  const input = $(id + 'Custom');
+  const cleaned = cleanClass(value);
+
+  if (!cleaned) {
+    const emptyOption = [...select.options].find(option => option.value === '');
+    select.value = emptyOption ? '' : (select.options[0]?.value ?? '');
+    input.value = '';
+    syncClassCustom(id);
+    return;
+  }
+
+  const match = [...select.options].find(option =>
+    option.value !== CUSTOM_CLASS_VALUE && classKey(option.value) === classKey(cleaned)
+  );
+
+  if (match) {
+    select.value = match.value;
+    input.value = '';
+  } else {
+    select.value = CUSTOM_CLASS_VALUE;
+    input.value = cleaned;
+  }
+
+  syncClassCustom(id);
+}
+
+function fillClassSelects() {
+  const classes = knownClasses();
+  const options = classes.map(name =>
+    `<option value="${safe(name)}">${safe(name)}</option>`
+  ).join('');
+
+  [['raceClass', false], ['lapClass', false], ['scheduleClass', true]].forEach(([id, optional]) => {
+    const select = $(id);
+    if (!select) return;
+
+    const oldValue = select.value;
+
+    select.innerHTML =
+      (optional ? '<option value="">Belirtilmedi</option>' : '') +
+      options +
+      `<option value="${CUSTOM_CLASS_VALUE}">＋ Özel klasman yaz…</option>`;
+
+    const stillThere = [...select.options].some(option => option.value === oldValue);
+    select.value = stillThere ? oldValue : select.options[0].value;
+
+    syncClassCustom(id);
+  });
+
+  const filter = $('classFilter');
+
+  if (filter) {
+    const selected = filter.value;
+    filter.innerHTML = '<option value="all">Tüm sınıflar</option>' + options;
+    filter.value = [...filter.options].some(option => option.value === selected) ? selected : 'all';
+  }
+}
+
+/* ===== FOTOĞRAFLAR ===== */
+
+/* GitHub "blob" bağlantılarını doğrudan resim adresine çevirir (daha güvenilir yüklenir) */
+function photoSrc(value) {
+  const url = safeUrl(value);
+  if (!url) return '';
+
+  const match = url.match(/^https:\/\/github\.com\/([^/]+)\/([^/]+)\/blob\/([^/]+)\/(.+?)(?:\?raw=true)?$/);
+
+  return match
+    ? `https://raw.githubusercontent.com/${match[1]}/${match[2]}/${match[3]}/${match[4]}`
+    : url;
+}
+
+/* Kartın içinde doğrudan görünen fotoğraf (tıklayınca büyür) */
+function photoBlock(value, caption) {
+  const src = photoSrc(value);
+  if (!src) return '';
+
+  return `<button type="button" class="record-photo"
+      data-photo-url="${safe(src)}"
+      data-photo-original="${safe(safeUrl(value))}"
+      data-photo-caption="${safe(caption)}"
+      aria-label="Fotoğrafı büyüt: ${safe(caption)}">
+      <img src="${safe(src)}" alt="${safe(caption)}" loading="lazy" decoding="async">
+    </button>`;
+}
+
 const todayISO = () => {
   const d = new Date();
   const month = String(d.getMonth() + 1).padStart(2, '0');
@@ -307,7 +448,7 @@ function renderRaces() {
     )
     .filter(race =>
       (driver === 'all' || String(race.driver_id) === driver) &&
-      (raceClass === 'all' || race.race_class === raceClass) &&
+      (raceClass === 'all' || classKey(race.race_class) === classKey(raceClass)) &&
       (!term || [
         race.game,
         race.car,
@@ -395,9 +536,7 @@ function showRaceDetail(race) {
       <div><small>BEST LAP</small><strong>${safe(race.best_lap || '—')}</strong></div>
     </div>
     ${race.notes ? `<p class="detail-notes">${safe(race.notes)}</p>` : ''}
-    ${safeUrl(race.image_url)
-      ? `<p><a class="detail-link" href="${safe(safeUrl(race.image_url))}" target="_blank" rel="noopener noreferrer">FOTOĞRAFI AÇ ↗</a></p>`
-      : ''}
+    ${photoBlock(race.image_url, `${driverName(race.driver_id)} · ${race.track || ''} · ${dateLabel(race.race_date)}`)}
     ${safeUrl(race.lfm_url)
       ? `<a class="detail-link" href="${safe(safeUrl(race.lfm_url))}" target="_blank" rel="noopener noreferrer">SONUÇ / LFM LİNKİ ↗</a>`
       : ''}
@@ -488,8 +627,8 @@ function renderLapTimes() {
   );
 
   $('lapTimeList').innerHTML = sorted.length
-    ? sorted.map(lap => `
-      <article class="race-card lap-card">
+    ? sorted.map(lap => {
+        const parts = `
         <div class="race-position">${safe(lap.lap_time)}<small>LAP TIME</small></div>
         <div class="race-main">
           <div class="race-topline">
@@ -501,13 +640,18 @@ function renderLapTimes() {
             <span>${safe(lap.track)}</span>
             <span>${safe(lap.game)}</span>
           </div>
-          ${safeUrl(lap.image_url)
-            ? `<a class="detail-link" href="${safe(safeUrl(lap.image_url))}" target="_blank" rel="noopener noreferrer">FOTOĞRAFI AÇ ↗</a>`
-            : ''}
         </div>
-        <div class="race-date">${safe(dateLabel(lap.lap_date))}</div>
-      </article>
-    `).join('')
+        <div class="race-date">${safe(dateLabel(lap.lap_date))}</div>`;
+
+        const photo = photoBlock(
+          lap.image_url,
+          `${driverName(lap.driver_id)} · ${lap.car} · ${lap.track} · ${lap.lap_time}`
+        );
+
+        return photo
+          ? `<article class="race-card lap-card lap-with-photo"><div class="lap-info">${parts}</div>${photo}</article>`
+          : `<article class="race-card lap-card">${parts}</article>`;
+      }).join('')
     : stateBox('laps', false, empty('TUR ZAMANI KAYDI YOK', 'Tur zamanları admin panelinden eklenir.'));
 
   $('adminLapList').innerHTML = sorted.length
@@ -801,6 +945,31 @@ function openGalleryModal() {
     `${currentPhotoIndex + 1} / ${teamPhotos.length} · ${photo.caption || 'Crescent Motorsport'}`;
 }
 
+/* Tek fotoğraf büyütme penceresi (tur zamanı / yarış fotoğrafları) */
+
+function openPhotoModal(url, caption) {
+  const image = $('photoModalImage');
+
+  image.src = url;
+  image.alt = caption || '';
+  $('photoModalCaption').textContent = caption || '';
+  $('photoModal').hidden = false;
+  document.body.classList.add('modal-open');
+  $('photoModalClose').focus();
+}
+
+function closePhotoModal() {
+  const modal = $('photoModal');
+  if (modal.hidden) return;
+
+  modal.hidden = true;
+  $('photoModalImage').removeAttribute('src');
+
+  if (!document.querySelector('.modal:not([hidden])') && $('galleryModal').hidden) {
+    document.body.classList.remove('modal-open');
+  }
+}
+
 function closeGalleryModal() {
   const modal = $('galleryModal');
   if (modal.hidden) return;
@@ -996,6 +1165,7 @@ async function deleteTeamPhoto(path) {
 
 function rerender() {
   fillDriverSelects();
+  fillClassSelects();
   renderStats();
   renderRaces();
   renderAdminDrivers();
@@ -1168,6 +1338,12 @@ function resetForm(formId, hiddenId, buttonId, messageId) {
   if (messageId) $(messageId).textContent = '';
 
   if (formId === 'raceForm') syncPositionField();
+
+  const classId = { raceForm: 'raceClass', lapForm: 'lapClass', scheduleForm: 'scheduleClass' }[formId];
+  if (classId) {
+    $(classId + 'Custom').value = '';
+    syncClassCustom(classId);
+  }
 }
 
 /* Pozisyon kutusu yalnızca "Tamamladı" durumunda açık olmalı */
@@ -1271,7 +1447,7 @@ function raceFormData() {
     driver_id: $('raceDriver').value,
     race_date: $('raceDate').value,
     game: $('raceGame').value.trim(),
-    race_class: $('raceClass').value,
+    race_class: getClassValue('raceClass'),
     car: $('raceCar').value.trim(),
     track: $('raceTrack').value.trim(),
     status,
@@ -1297,6 +1473,11 @@ async function saveRace(event) {
   await runSave($('raceForm'), 'raceMessage', async () => {
     const id = $('raceId').value;
     const payload = raceFormData();
+
+    if (!payload.race_class) {
+      $('raceMessage').textContent = 'Bir klasman seç ya da "Özel klasman yaz" ile adını gir.';
+      return;
+    }
 
     if (!payload.game || !payload.car || !payload.track) {
       $('raceMessage').textContent = 'Oyun, araç ve pist alanları boş bırakılamaz.';
@@ -1334,7 +1515,7 @@ function editRace(race) {
   $('raceDriver').value = race.driver_id;
   $('raceDate').value = race.race_date || '';
   $('raceGame').value = race.game || '';
-  $('raceClass').value = race.race_class || 'Other';
+  setClassValue('raceClass', race.race_class || 'Other');
   $('raceCar').value = race.car || '';
   $('raceTrack').value = race.track || '';
   $('raceStatus').value = race.status || 'finished';
@@ -1360,7 +1541,7 @@ function lapFormData() {
     driver_id: $('lapDriver').value,
     lap_date: $('lapDate').value || null,
     game: $('lapGame').value.trim(),
-    race_class: $('lapClass').value,
+    race_class: getClassValue('lapClass'),
     car: $('lapCar').value.trim(),
     track: $('lapTrack').value.trim(),
     lap_time: $('lapTime').value.trim(),
@@ -1381,6 +1562,11 @@ async function saveLap(event) {
   await runSave($('lapForm'), 'lapMessage', async () => {
     const id = $('lapId').value;
     const payload = lapFormData();
+
+    if (!payload.race_class) {
+      $('lapMessage').textContent = 'Bir klasman seç ya da "Özel klasman yaz" ile adını gir.';
+      return;
+    }
 
     if (!payload.game || !payload.car || !payload.track) {
       $('lapMessage').textContent = 'Oyun, araç ve pist alanları boş bırakılamaz.';
@@ -1418,7 +1604,7 @@ function editLap(lap) {
   $('lapDriver').value = lap.driver_id;
   $('lapDate').value = lap.lap_date || '';
   $('lapGame').value = lap.game || '';
-  $('lapClass').value = lap.race_class || 'Other';
+  setClassValue('lapClass', lap.race_class || 'Other');
   $('lapCar').value = lap.car || '';
   $('lapTrack').value = lap.track || '';
   $('lapTime').value = lap.lap_time || '';
@@ -1437,7 +1623,7 @@ function scheduleFormData() {
     event_date: $('scheduleDate').value,
     event_time: $('scheduleTime').value || null,
     game: $('scheduleGame').value.trim() || null,
-    race_class: $('scheduleClass').value || null,
+    race_class: getClassValue('scheduleClass') || null,
     track: $('scheduleTrack').value.trim() || null,
     drivers: $('scheduleDrivers').value.trim() || null,
     car: $('scheduleCar').value.trim() || null,
@@ -1456,6 +1642,11 @@ async function saveSchedule(event) {
 
     if (!payload.event_name) {
       $('scheduleMessage').textContent = 'Etkinlik adı boş bırakılamaz.';
+      return;
+    }
+
+    if ($('scheduleClass').value === CUSTOM_CLASS_VALUE && !payload.race_class) {
+      $('scheduleMessage').textContent = 'Özel klasman adını yaz ya da "Belirtilmedi" seç.';
       return;
     }
 
@@ -1486,7 +1677,7 @@ function editSchedule(event) {
   $('scheduleDate').value = event.event_date || '';
   $('scheduleTime').value = event.event_time ? String(event.event_time).slice(0, 5) : '';
   $('scheduleGame').value = event.game || '';
-  $('scheduleClass').value = event.race_class || '';
+  setClassValue('scheduleClass', event.race_class || '');
   $('scheduleTrack').value = event.track || '';
   $('scheduleDrivers').value = event.drivers || '';
   $('scheduleCar').value = event.car || '';
@@ -1608,6 +1799,7 @@ document.addEventListener('keydown', event => {
   if (event.key === 'Escape') {
     $('loginModal').hidden = true;
     $('raceModal').hidden = true;
+    closePhotoModal();
     closeGalleryModal();
     document.body.classList.remove('modal-open');
   }
@@ -1677,6 +1869,57 @@ document.querySelectorAll('[data-admin-tab]').forEach(button => {
 
 $('raceStatus').addEventListener('change', syncPositionField);
 syncPositionField();
+
+/* Klasman seçimi: "Özel klasman yaz" seçilince yazı kutusu açılır */
+['raceClass', 'lapClass', 'scheduleClass'].forEach(id => {
+  $(id).addEventListener('change', () => {
+    syncClassCustom(id);
+    if ($(id).value === CUSTOM_CLASS_VALUE) $(id + 'Custom').focus();
+  });
+});
+fillClassSelects();
+
+/* Fotoğraflar: tıklayınca büyüt, yüklenemezse bağlantıya dönüş göster */
+document.addEventListener('click', event => {
+  const photo = event.target.closest('.record-photo[data-photo-url]');
+  if (photo) {
+    openPhotoModal(photo.dataset.photoUrl, photo.dataset.photoCaption);
+    return;
+  }
+
+  if (event.target.closest('[data-close-photo]')) closePhotoModal();
+});
+
+document.addEventListener('load', event => {
+  const image = event.target;
+  if (!(image instanceof HTMLImageElement)) return;
+
+  image.closest('.record-photo')?.classList.add('is-loaded');
+}, true);
+
+document.addEventListener('error', event => {
+  const image = event.target;
+  if (!(image instanceof HTMLImageElement)) return;
+
+  const photo = image.closest('.record-photo');
+  if (!photo) return;
+
+  const original = photo.dataset.photoOriginal;
+  const fallback = document.createElement(original ? 'a' : 'span');
+
+  fallback.className = 'record-photo photo-failed';
+  fallback.textContent = original
+    ? 'FOTOĞRAF YÜKLENEMEDİ · BAĞLANTIYI AÇ ↗'
+    : 'FOTOĞRAF YÜKLENEMEDİ';
+
+  if (original) {
+    fallback.href = original;
+    fallback.target = '_blank';
+    fallback.rel = 'noopener noreferrer';
+  }
+
+  photo.replaceWith(fallback);
+}, true);
 
 document.addEventListener('click', event => {
   if (!event.target.closest('[data-retry]')) return;
