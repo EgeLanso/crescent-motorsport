@@ -707,3 +707,30 @@ select { cursor: pointer; }
     animation-iteration-count: 1 !important;
   }
 }
+
+/* ===== Aşama 1 eklemeleri ===== */
+
+/* Kaydederken buton */
+.is-saving { opacity: .6; cursor: progress; }
+
+/* Veri yüklenirken */
+.loading-state { border-style: solid; }
+
+/* Takvim: geçmiş etkinlikler (açılır/kapanır) */
+.past-events { margin-top: 18px; }
+.past-events > summary {
+  cursor: pointer;
+  padding: 14px 18px;
+  border: 1px solid var(--line);
+  background: var(--panel);
+  color: #a9aeb5;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 1.5px;
+  list-style: none;
+}
+.past-events > summary::-webkit-details-marker { display: none; }
+.past-events > summary::after { content: " ▾"; }
+.past-events[open] > summary::after { content: " ▴"; }
+.past-events > summary:hover { background: #15171b; color: #dce0e4; }
+.past-events > .race-card { margin-top: 10px; opacity: .8; }

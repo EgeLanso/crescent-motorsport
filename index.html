@@ -83,18 +83,18 @@
 
       <div class="section-kicker">
         <span>01 / TEAM OVERVIEW</span>
-        <span>MANUALLY LOGGED · LIVE TOTALS</span>
+        <span>MANUALLY LOGGED · PİLOT TOPLAMLARI</span>
       </div>
       <div class="stats-grid">
         <article class="stat-card">
           <span class="stat-label">TOTAL WINS</span>
           <strong id="statWins">—</strong>
-          <span class="stat-foot">1. sıra bitirişleri</span>
+          <span class="stat-foot">Pilot profillerindeki toplam</span>
         </article>
         <article class="stat-card">
           <span class="stat-label">TOTAL STARTS</span>
           <strong id="statStarts">—</strong>
-          <span class="stat-foot">Kaydedilen yarışlar</span>
+          <span class="stat-foot">Pilot profillerindeki toplam</span>
         </article>
         <article class="stat-card stat-card-note">
           <span class="stat-label">THE MINDSET</span>
@@ -115,9 +115,9 @@
         <label class="filter-label search-filter">ARA<input id="searchFilter" type="search" placeholder="Araç, pist, oyun…"></label>
       </div>
       <div id="raceList" class="race-list">
-        <div class="empty-state"><span class="empty-icon">↗</span><h3>İLK KAYITLAR BEKLENİYOR</h3><p>Yarış sonuçları yönetim panelinden elle eklenecek.<br>Burada sahte sonuç gösterilmiyor.</p></div>
+        <div class="empty-state loading-state"><h3>YÜKLENİYOR…</h3><p>Veriler getiriliyor, lütfen bekle.</p></div>
       </div>
-      <p id="raceCount" class="race-count">0 KAYIT</p>
+      <p id="raceCount" class="race-count">YÜKLENİYOR</p>
     </section>
 
     <section id="drivers" class="drivers-section">
@@ -125,7 +125,7 @@
         <div><p class="eyebrow">03 / THE LINE-UP</p><h2>OUR <span>DRIVERS</span></h2></div>
         <p class="heading-note">Takımımız.</p>
       </div>
-      <div id="driverCards" class="driver-grid"></div>
+      <div id="driverCards" class="driver-grid"><div class="empty-state loading-state"><h3>YÜKLENİYOR…</h3><p>Veriler getiriliyor, lütfen bekle.</p></div></div>
     </section>
 
     <section id="lap-times" class="races-section">
@@ -134,7 +134,7 @@
         <p class="heading-note">Pilotların elle girilen tur zamanları.</p>
       </div>
       <div id="lapTimeList" class="race-list">
-        <div class="empty-state"><h3>TUR ZAMANI KAYDI YOK</h3><p>Tur zamanları admin panelinden eklenir.</p></div>
+        <div class="empty-state loading-state"><h3>YÜKLENİYOR…</h3><p>Veriler getiriliyor, lütfen bekle.</p></div>
       </div>
     </section>
 
@@ -144,7 +144,7 @@
         <p class="heading-note">Takvim ve yarış planı.</p>
       </div>
       <div id="scheduleList" class="race-list">
-        <div class="empty-state"><h3>TAKVİM BOŞ</h3><p>Yarış tarihlerini yönetim panelinden ekleyebilirsin.</p></div>
+        <div class="empty-state loading-state"><h3>YÜKLENİYOR…</h3><p>Veriler getiriliyor, lütfen bekle.</p></div>
       </div>
     </section>
 
@@ -282,7 +282,7 @@
         <label>TARİH<input id="scheduleDate" type="date" required></label>
         <label>SAAT<input id="scheduleTime" type="time"></label>
         <label>OYUN<input id="scheduleGame" placeholder="Assetto Corsa Competizione"></label>
-        <label>SINIF<select id="scheduleClass"><option>Hypercar</option><option>Formula 1</option><option>LMP3</option><option>GT3</option><option>Other</option></select></label>
+        <label>SINIF<select id="scheduleClass"><option value="">Belirtilmedi</option><option>Hypercar</option><option>Formula 1</option><option>LMP3</option><option>GT3</option><option>Other</option></select></label>
         <label>PİST<input id="scheduleTrack" placeholder="Spa-Francorchamps"></label>
         <label>PİLOT / KATILIMCI<input id="scheduleDrivers" placeholder="Ege, Efe"></label>
         <label>ARAÇ<input id="scheduleCar" placeholder="İsteğe bağlı"></label>

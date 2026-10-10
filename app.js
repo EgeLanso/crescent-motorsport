@@ -1,5 +1,13 @@
 
-import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm';
+let createClient = null;
+let libraryFailed = false;
+
+try {
+  ({ createClient } = await import('https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm'));
+} catch (error) {
+  console.error('Supabase kütüphanesi yüklenemedi:', error);
+  libraryFailed = true;
+}
 
 const SUPABASE_URL = 'https://supsixtnyprkyfaemabk.supabase.co';
 const SUPABASE_ANON_KEY = 'sb_publishable_Mb7kpEFCsWCGKkq-rWAsXQ_VElbSil0';
@@ -10,7 +18,7 @@ const configured =
   !SUPABASE_URL.includes('PASTE_') &&
   !SUPABASE_ANON_KEY.includes('PASTE_');
 
-const supabase = configured
+const supabase = configured && createClient
   ? createClient(SUPABASE_URL, SUPABASE_ANON_KEY)
   : null;
 
@@ -25,6 +33,9 @@ let isAdmin = false;
 let toastTimer;
 let touchStartX = 0;
 let touchStartY = 0;
+let dataLoaded = false;
+let adminLoadedFor = null;
+const tableErrors = { drivers: false, races: false, laps: false, schedule: false };
 
 const $ = id => document.getElementById(id);
 
@@ -58,6 +69,64 @@ const positionText = race =>
         ? `P${race.position}`
         : '—';
 
+/* Sadece http/https bağlantılarına izin ver (javascript: gibi tehlikeli bağlantıları engeller) */
+const safeUrl = value => {
+  try {
+    const url = new URL(String(value ?? '').trim());
+    return ['http:', 'https:'].includes(url.protocol) ? url.href : '';
+  } catch {
+    return '';
+  }
+};
+
+const todayISO = () => {
+  const d = new Date();
+  const month = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
+  return `${d.getFullYear()}-${month}-${day}`;
+};
+
+/* Tur zamanı biçimi: 1:35.726 veya 59.800 */
+const LAP_PATTERN = /^(\d{1,2}:)?\d{1,2}\.\d{1,3}$/;
+const LAP_FORMAT_MESSAGE = 'Tur zamanı 1:35.726 biçiminde yazılmalı (dakika:saniye.milisaniye).';
+
+/* Supabase hatalarını anlaşılır Türkçe mesaja çevirir */
+function friendlyError(error, what = 'İşlem') {
+  const code = String(error?.code || '');
+  const text = String(error?.message || '');
+
+  if (code === '23505') return 'Bu isimde bir kayıt zaten var. Farklı bir ad dene.';
+  if (code === '23514') return 'Girilen değerlerden biri veritabanı kurallarına uymuyor. Klasman adını kontrol et. Yeni klasman adları için veritabanı güncellemesi (SQL 01) yapılmış olmalı.';
+  if (code === '23503') return 'Seçilen pilot bulunamadı. Sayfayı yenileyip tekrar dene.';
+  if (code === '23502') return 'Zorunlu bir alan boş bırakılmış.';
+  if (code === '42501' || /row-level security|permission denied|jwt/i.test(text)) {
+    return 'Bu işlem için yetkin yok ya da oturumun kapanmış. Çıkış yapıp tekrar giriş yapmayı dene.';
+  }
+  if (/failed to fetch|network|load failed/i.test(text)) {
+    return 'İnternet bağlantısı kurulamadı. Bağlantını kontrol edip tekrar dene.';
+  }
+  return `${what} tamamlanamadı. Alanları kontrol et. (Teknik ayrıntı tarayıcı konsolunda.)`;
+}
+
+/* Kaydetme sırasında butonu kilitler, "Kaydediliyor…" gösterir */
+async function runSave(form, messageId, task) {
+  const button = form.querySelector('button[type="submit"]');
+  if (button) {
+    button.disabled = true;
+    button.classList.add('is-saving');
+  }
+  $(messageId).textContent = 'Kaydediliyor…';
+
+  try {
+    await task();
+  } finally {
+    if (button) {
+      button.disabled = false;
+      button.classList.remove('is-saving');
+    }
+  }
+}
+
 function notify(message) {
   const toast = $('toast');
   if (!toast) return;
@@ -74,6 +143,29 @@ function empty(message, sub = '') {
     <h3>${safe(message)}</h3>
     <p>${safe(sub)}</p>
   </div>`;
+}
+
+function loadingState() {
+  return `<div class="empty-state loading-state">
+    <h3>YÜKLENİYOR…</h3>
+    <p>Veriler getiriliyor, lütfen bekle.</p>
+  </div>`;
+}
+
+function errorState() {
+  return `<div class="empty-state">
+    <span class="empty-icon">!</span>
+    <h3>VERİLER YÜKLENEMEDİ</h3>
+    <p>Bağlantı sorunu olabilir. Biraz sonra tekrar dene.</p>
+    <p><button type="button" class="outline-button" data-retry>TEKRAR DENE</button></p>
+  </div>`;
+}
+
+/* Veri henüz gelmediyse "yükleniyor", hata varsa "yüklenemedi", yoksa verilen boş durum */
+function stateBox(key, hasData, emptyHtml) {
+  if (!dataLoaded) return loadingState();
+  if (tableErrors[key] && !hasData) return errorState();
+  return emptyHtml;
 }
 
 /* PILOT SEÇENEKLERİ */
@@ -156,15 +248,17 @@ function renderStats() {
 function renderDrivers() {
   $('driverCards').innerHTML = drivers.length
     ? drivers.map(driver => {
+        const carImage = safeUrl(driver.car_image_url);
+        const lfmLink = safeUrl(driver.lfm_profile_url);
         const starts = Number(driver.total_starts) || 0;
         const wins = Number(driver.total_wins) || 0;
         const podiums = Number(driver.total_podiums) || 0;
         const poles = Number(driver.total_poles) || 0;
 
         return `<article class="driver-card" data-number="${safe(driver.number ?? '—')}">
-          ${driver.car_image_url
+          ${carImage
             ? `<img class="driver-car-image"
-                src="${safe(driver.car_image_url)}"
+                src="${safe(carImage)}"
                 alt="${safe(driver.name)} — ${safe(driver.main_car || 'araç')}"
                 loading="lazy"
                 onerror="this.hidden=true">`
@@ -185,15 +279,15 @@ function renderDrivers() {
             ${starts} starts · ${wins} wins<br>
             ${podiums} podiums · ${poles} poles
           </div>
-          ${driver.lfm_profile_url
+          ${lfmLink
             ? `<a class="text-link"
-                href="${safe(driver.lfm_profile_url)}"
+                href="${safe(lfmLink)}"
                 target="_blank"
                 rel="noopener noreferrer">LFM PROFİLİ ↗</a>`
             : ''}
         </article>`;
       }).join('')
-    : empty('PİLOTLAR EKLENMEDİ', 'Pilotlar admin panelinden eklenir.');
+    : stateBox('drivers', false, empty('PİLOTLAR EKLENMEDİ', 'Pilotlar admin panelinden eklenir.'));
 }
 
 /* YARIŞLAR */
@@ -223,15 +317,15 @@ function renderRaces() {
       ].some(value => String(value || '').toLowerCase().includes(term)))
     );
 
-  $('raceCount').textContent = `${filtered.length} KAYIT`;
+  $('raceCount').textContent = dataLoaded ? `${filtered.length} KAYIT` : 'YÜKLENİYOR';
 
   if (!filtered.length) {
-    $('raceList').innerHTML = empty(
-      races.length ? 'SONUÇ BULUNAMADI' : 'İLK KAYITLAR BEKLENİYOR',
-      races.length
-        ? 'Filtreleri değiştirip tekrar dene.'
-        : 'Yarış sonuçları admin panelinden elle eklenecek.'
-    );
+    $('raceList').innerHTML = races.length
+      ? empty('SONUÇ BULUNAMADI', 'Filtreleri değiştirip tekrar dene.')
+      : stateBox('races', false, empty(
+          'İLK KAYITLAR BEKLENİYOR',
+          'Yarış sonuçları admin panelinden elle eklenecek.'
+        ));
     return;
   }
 
@@ -301,11 +395,11 @@ function showRaceDetail(race) {
       <div><small>BEST LAP</small><strong>${safe(race.best_lap || '—')}</strong></div>
     </div>
     ${race.notes ? `<p class="detail-notes">${safe(race.notes)}</p>` : ''}
-    ${race.image_url
-      ? `<p><a class="detail-link" href="${safe(race.image_url)}" target="_blank" rel="noopener noreferrer">FOTOĞRAFI AÇ ↗</a></p>`
+    ${safeUrl(race.image_url)
+      ? `<p><a class="detail-link" href="${safe(safeUrl(race.image_url))}" target="_blank" rel="noopener noreferrer">FOTOĞRAFI AÇ ↗</a></p>`
       : ''}
-    ${race.lfm_url
-      ? `<a class="detail-link" href="${safe(race.lfm_url)}" target="_blank" rel="noopener noreferrer">SONUÇ / LFM LİNKİ ↗</a>`
+    ${safeUrl(race.lfm_url)
+      ? `<a class="detail-link" href="${safe(safeUrl(race.lfm_url))}" target="_blank" rel="noopener noreferrer">SONUÇ / LFM LİNKİ ↗</a>`
       : ''}
   `;
 
@@ -407,14 +501,14 @@ function renderLapTimes() {
             <span>${safe(lap.track)}</span>
             <span>${safe(lap.game)}</span>
           </div>
-          ${lap.image_url
-            ? `<a class="detail-link" href="${safe(lap.image_url)}" target="_blank" rel="noopener noreferrer">FOTOĞRAFI AÇ ↗</a>`
+          ${safeUrl(lap.image_url)
+            ? `<a class="detail-link" href="${safe(safeUrl(lap.image_url))}" target="_blank" rel="noopener noreferrer">FOTOĞRAFI AÇ ↗</a>`
             : ''}
         </div>
         <div class="race-date">${safe(dateLabel(lap.lap_date))}</div>
       </article>
     `).join('')
-    : empty('TUR ZAMANI KAYDI YOK', 'Tur zamanları admin panelinden eklenir.');
+    : stateBox('laps', false, empty('TUR ZAMANI KAYDI YOK', 'Tur zamanları admin panelinden eklenir.'));
 
   $('adminLapList').innerHTML = sorted.length
     ? sorted.map(lap => recordRow(
@@ -440,13 +534,8 @@ function renderLapTimes() {
 
 /* TAKVİM */
 
-function renderSchedule() {
-  const sorted = [...schedule].sort((a, b) =>
-    String(a.event_date || '').localeCompare(String(b.event_date || ''))
-  );
-
-  $('scheduleList').innerHTML = sorted.length
-    ? sorted.map(event => `
+function scheduleCard(event) {
+  return `
       <article class="race-card">
         <div class="race-position">
           ${safe(String(event.event_date || '').slice(8, 10) || '—')}
@@ -463,8 +552,8 @@ function renderSchedule() {
               .map(value => `<span>${safe(value)}</span>`).join('')}
           </div>
           ${event.notes ? `<p class="detail-notes">${safe(event.notes)}</p>` : ''}
-          ${event.event_url
-            ? `<a class="detail-link" href="${safe(event.event_url)}" target="_blank" rel="noopener noreferrer">ETKİNLİK BİLGİSİ ↗</a>`
+          ${safeUrl(event.event_url)
+            ? `<a class="detail-link" href="${safe(safeUrl(event.event_url))}" target="_blank" rel="noopener noreferrer">ETKİNLİK BİLGİSİ ↗</a>`
             : ''}
         </div>
         <div class="race-date">
@@ -472,8 +561,39 @@ function renderSchedule() {
           <strong>${safe(event.event_time ? String(event.event_time).slice(0, 5) : 'SAAT BELİRTİLMEDİ')}</strong>
         </div>
       </article>
-    `).join('')
-    : empty('TAKVİM BOŞ', 'Yarış tarihlerini admin panelinden ekleyebilirsin.');
+    `;
+}
+
+function renderSchedule() {
+  const byDateAsc = (a, b) =>
+    String(a.event_date || '').localeCompare(String(b.event_date || ''));
+
+  const sorted = [...schedule].sort(byDateAsc);
+  const today = todayISO();
+
+  const upcoming = sorted.filter(event => String(event.event_date || '') >= today);
+  const past = sorted
+    .filter(event => String(event.event_date || '') < today)
+    .reverse();
+
+  if (!sorted.length) {
+    $('scheduleList').innerHTML = stateBox(
+      'schedule',
+      false,
+      empty('TAKVİM BOŞ', 'Yarış tarihlerini admin panelinden ekleyebilirsin.')
+    );
+  } else {
+    $('scheduleList').innerHTML =
+      (upcoming.length
+        ? upcoming.map(scheduleCard).join('')
+        : empty('YAKLAŞAN ETKİNLİK YOK', 'Yeni etkinlikler eklenince burada görünecek.')) +
+      (past.length
+        ? `<details class="past-events">
+            <summary>GEÇMİŞ ETKİNLİKLER (${past.length})</summary>
+            ${past.map(scheduleCard).join('')}
+          </details>`
+        : '');
+  }
 
   $('adminScheduleList').innerHTML = sorted.length
     ? sorted.map(event => recordRow(
@@ -538,6 +658,7 @@ function renderGallery() {
     if (fullscreenButton) fullscreenButton.disabled = true;
     $('galleryPrev').disabled = true;
     $('galleryNext').disabled = true;
+    renderAdminPhotos();
     return;
   }
 
@@ -579,7 +700,9 @@ async function loadTeamPhotos() {
   if (!supabase) {
     loading.hidden = true;
     emptyBox.hidden = false;
-    emptyBox.innerHTML = '<strong>SUPABASE YAPILANDIRILMAMIŞ</strong><span>Supabase ayarlarını kontrol et.</span>';
+    emptyBox.innerHTML = libraryFailed
+      ? '<strong>FOTOĞRAFLAR YÜKLENEMEDİ</strong><span>Bağlantı sorunu olabilir. Sayfayı yenilemeyi dene.</span>'
+      : '<strong>SUPABASE YAPILANDIRILMAMIŞ</strong><span>Supabase ayarlarını kontrol et.</span>';
     return;
   }
 
@@ -835,13 +958,20 @@ async function deleteTeamPhoto(path) {
     return;
   }
 
-  const { error } = await supabase.storage
+  const { data: removed, error } = await supabase.storage
     .from(PHOTO_BUCKET)
     .remove([path]);
 
   if (error) {
     console.error('Fotoğraf silinemedi:', error);
     notify('Fotoğraf silinemedi. Storage silme politikasını kontrol et.');
+    return;
+  }
+
+  /* Yetki yoksa Supabase hata vermeden boş liste döndürebilir; bunu başarı sanma */
+  if (!removed || removed.length === 0) {
+    notify('Fotoğraf silinemedi (yetki yok ya da dosya zaten silinmiş). Liste yenileniyor.');
+    await loadTeamPhotos();
     return;
   }
 
@@ -909,18 +1039,41 @@ async function refreshData() {
     races = [];
     lapTimes = [];
     schedule = [];
+
+    if (libraryFailed) {
+      Object.keys(tableErrors).forEach(key => { tableErrors[key] = true; });
+    }
+
+    dataLoaded = true;
     rerender();
     return;
   }
 
-  const results = await Promise.all([
-    supabase.from('drivers').select('*').order('name'),
-    supabase.from('race_results').select('*').order('race_date', { ascending: false }),
-    supabase.from('driver_lap_times').select('*').order('lap_date', { ascending: false }),
-    supabase.from('race_schedule').select('*').order('event_date', { ascending: true })
-  ]);
+  let results;
+
+  try {
+    results = await Promise.all([
+      supabase.from('drivers').select('*').order('name'),
+      supabase.from('race_results').select('*').order('race_date', { ascending: false }),
+      supabase.from('driver_lap_times').select('*').order('lap_date', { ascending: false }),
+      supabase.from('race_schedule').select('*').order('event_date', { ascending: true })
+    ]);
+  } catch (error) {
+    console.error('Supabase veri yükleme hatası:', error);
+    Object.keys(tableErrors).forEach(key => { tableErrors[key] = true; });
+    const hadData = dataLoaded;
+    dataLoaded = true;
+    rerender();
+    if (hadData) notify('Veriler yenilenemedi.');
+    return;
+  }
 
   const [driverResult, raceResult, lapResult, scheduleResult] = results;
+
+  tableErrors.drivers = !!driverResult.error;
+  tableErrors.races = !!raceResult.error;
+  tableErrors.laps = !!lapResult.error;
+  tableErrors.schedule = !!scheduleResult.error;
 
   if (!driverResult.error) drivers = driverResult.data || [];
   if (!raceResult.error) races = raceResult.data || [];
@@ -931,7 +1084,22 @@ async function refreshData() {
     if (result.error) console.error('Supabase veri yükleme hatası:', result.error);
   }
 
+  const hadData = dataLoaded;
+  const anyError = results.some(result => result.error);
+
+  dataLoaded = true;
   rerender();
+
+  if (hadData && anyError) notify('Bazı veriler yenilenemedi.');
+}
+
+/* Admin verilerini bir kez yükle (giriş + oturum olayı çift yüklemesin) */
+async function loadAdminData(user) {
+  if (!user || adminLoadedFor === user.id) return;
+
+  adminLoadedFor = user.id;
+  await refreshData();
+  await loadTeamPhotos();
 }
 
 async function handleLogin(event) {
@@ -973,8 +1141,7 @@ async function handleLogin(event) {
   $('adminPanel').hidden = false;
   document.body.classList.remove('modal-open');
 
-  await refreshData();
-  await loadTeamPhotos();
+  await loadAdminData(currentUser);
 
   $('adminPanel').scrollIntoView({ behavior: 'smooth' });
   notify('Admin girişi başarılı.');
@@ -985,6 +1152,7 @@ async function handleLogout() {
 
   currentUser = null;
   isAdmin = false;
+  adminLoadedFor = null;
   $('adminPanel').hidden = true;
   renderAdminPhotos();
   notify('Çıkış yapıldı.');
@@ -998,6 +1166,16 @@ function resetForm(formId, hiddenId, buttonId, messageId) {
   if (hiddenId) $(hiddenId).value = '';
   if (buttonId) $(buttonId).hidden = true;
   if (messageId) $(messageId).textContent = '';
+
+  if (formId === 'raceForm') syncPositionField();
+}
+
+/* Pozisyon kutusu yalnızca "Tamamladı" durumunda açık olmalı */
+function syncPositionField() {
+  const finished = $('raceStatus').value === 'finished';
+
+  $('racePosition').disabled = !finished;
+  if (!finished) $('racePosition').value = '';
 }
 
 /* PİLOT KAYDET / DÜZENLE */
@@ -1026,41 +1204,62 @@ async function saveDriver(event) {
   event.preventDefault();
   if (!isAdmin || !supabase) return;
 
-  const id = $('driverId').value;
+  await runSave($('driverForm'), 'driverMessage', async () => {
+    const id = $('driverId').value;
 
-  const payload = {
-    name: $('driverName').value.trim(),
-    number: $('driverNumber').value === '' ? null : Number($('driverNumber').value),
-    tag: $('driverTag').value.trim() || 'Driver',
-    main_car: $('driverCar').value.trim() || null,
-    car_image_url: $('driverCarImage').value.trim() || null,
-    lfm_profile_url: $('driverLfmUrl').value.trim() || null,
-    total_starts: Math.max(0, Math.floor(Number($('driverStarts').value) || 0)),
-    total_wins: Math.max(0, Math.floor(Number($('driverWins').value) || 0)),
-    total_podiums: Math.max(0, Math.floor(Number($('driverPodiums').value) || 0)),
-    total_poles: Math.max(0, Math.floor(Number($('driverPoles').value) || 0))
-  };
+    const payload = {
+      name: $('driverName').value.trim(),
+      number: $('driverNumber').value === '' ? null : Number($('driverNumber').value),
+      tag: $('driverTag').value.trim() || 'Driver',
+      main_car: $('driverCar').value.trim() || null,
+      car_image_url: $('driverCarImage').value.trim() || null,
+      lfm_profile_url: $('driverLfmUrl').value.trim() || null,
+      total_starts: Math.max(0, Math.floor(Number($('driverStarts').value) || 0)),
+      total_wins: Math.max(0, Math.floor(Number($('driverWins').value) || 0)),
+      total_podiums: Math.max(0, Math.floor(Number($('driverPodiums').value) || 0)),
+      total_poles: Math.max(0, Math.floor(Number($('driverPoles').value) || 0))
+    };
 
-  const result = id
-    ? await supabase.from('drivers').update(payload).eq('id', id)
-    : await supabase.from('drivers').insert(payload);
+    if (!payload.name) {
+      $('driverMessage').textContent = 'Pilot adı boş bırakılamaz.';
+      return;
+    }
 
-  if (result.error) {
-    $('driverMessage').textContent = 'Pilot kaydedilemedi. Alanları ve veritabanı sütunlarını kontrol et.';
-    console.error(result.error);
-    return;
-  }
+    const result = id
+      ? await supabase.from('drivers').update(payload).eq('id', id)
+      : await supabase.from('drivers').insert(payload);
 
-  resetForm('driverForm', 'driverId', 'cancelDriverEdit', 'driverMessage');
-  $('driverSaveButton').innerHTML = 'PİLOTU KAYDET <span>↗</span>';
-  $('cancelDriverEdit').hidden = true;
+    if (result.error) {
+      $('driverMessage').textContent = friendlyError(result.error, 'Pilot kaydı');
+      console.error(result.error);
+      return;
+    }
 
-  await refreshData();
-  notify(id ? 'Pilot güncellendi.' : 'Pilot eklendi.');
+    resetForm('driverForm', 'driverId', 'cancelDriverEdit', 'driverMessage');
+    $('driverSaveButton').innerHTML = 'PİLOTU KAYDET <span>↗</span>';
+    $('cancelDriverEdit').hidden = true;
+    $('driverMessage').textContent = id ? 'Pilot güncellendi.' : 'Pilot eklendi.';
+
+    await refreshData();
+    notify(id ? 'Pilot güncellendi.' : 'Pilot eklendi.');
+  });
 }
 
 async function deleteDriver(id) {
-  await deleteRecord('drivers', id, 'Pilot silindi.');
+  const driver = drivers.find(item => String(item.id) === String(id));
+  const raceCount = races.filter(race => String(race.driver_id) === String(id)).length;
+  const lapCount = lapTimes.filter(lap => String(lap.driver_id) === String(id)).length;
+
+  const related = raceCount || lapCount
+    ? `Bu pilota ait ${raceCount} yarış kaydı ve ${lapCount} tur zamanı da kalıcı olarak silinecek.`
+    : 'Bu pilota ait yarış veya tur zamanı kaydı yok.';
+
+  await deleteRecord(
+    'drivers',
+    id,
+    'Pilot silindi.',
+    `"${driver?.name || 'Bu pilot'}" silinecek.\n\n${related}\n\nBu işlem geri alınamaz. Devam edilsin mi?`
+  );
 }
 
 /* YARIŞ KAYDET / DÜZENLE */
@@ -1095,23 +1294,37 @@ async function saveRace(event) {
     return;
   }
 
-  const id = $('raceId').value;
-  const payload = raceFormData();
+  await runSave($('raceForm'), 'raceMessage', async () => {
+    const id = $('raceId').value;
+    const payload = raceFormData();
 
-  const { error } = id
-    ? await supabase.from('race_results').update(payload).eq('id', id)
-    : await supabase.from('race_results').insert(payload);
+    if (!payload.game || !payload.car || !payload.track) {
+      $('raceMessage').textContent = 'Oyun, araç ve pist alanları boş bırakılamaz.';
+      return;
+    }
 
-  if (error) {
-    $('raceMessage').textContent = 'Kayıt yapılamadı. Alanları ve Supabase kurulumunu kontrol et.';
-    console.error(error);
-    return;
-  }
+    if (payload.best_lap && !LAP_PATTERN.test(payload.best_lap)) {
+      $('raceMessage').textContent = 'En iyi tur için ' + LAP_FORMAT_MESSAGE;
+      return;
+    }
 
-  resetForm('raceForm', 'raceId', 'cancelEdit', 'raceMessage');
-  $('cancelEdit').hidden = true;
-  await refreshData();
-  notify(id ? 'Yarış güncellendi.' : 'Yarış eklendi.');
+    const { error } = id
+      ? await supabase.from('race_results').update(payload).eq('id', id)
+      : await supabase.from('race_results').insert(payload);
+
+    if (error) {
+      $('raceMessage').textContent = friendlyError(error, 'Yarış kaydı');
+      console.error(error);
+      return;
+    }
+
+    resetForm('raceForm', 'raceId', 'cancelEdit', 'raceMessage');
+    $('cancelEdit').hidden = true;
+    $('raceMessage').textContent = id ? 'Yarış güncellendi.' : 'Yarış eklendi.';
+
+    await refreshData();
+    notify(id ? 'Yarış güncellendi.' : 'Yarış eklendi.');
+  });
 }
 
 function editRace(race) {
@@ -1126,6 +1339,7 @@ function editRace(race) {
   $('raceTrack').value = race.track || '';
   $('raceStatus').value = race.status || 'finished';
   $('racePosition').value = race.position || '';
+  syncPositionField();
   $('raceLap').value = race.best_lap || '';
   $('raceUrl').value = race.lfm_url || '';
   $('raceImage').value = race.image_url || '';
@@ -1164,23 +1378,37 @@ async function saveLap(event) {
     return;
   }
 
-  const id = $('lapId').value;
-  const payload = lapFormData();
+  await runSave($('lapForm'), 'lapMessage', async () => {
+    const id = $('lapId').value;
+    const payload = lapFormData();
 
-  const result = id
-    ? await supabase.from('driver_lap_times').update(payload).eq('id', id)
-    : await supabase.from('driver_lap_times').insert(payload);
+    if (!payload.game || !payload.car || !payload.track) {
+      $('lapMessage').textContent = 'Oyun, araç ve pist alanları boş bırakılamaz.';
+      return;
+    }
 
-  if (result.error) {
-    $('lapMessage').textContent = 'Tur zamanı kaydedilemedi. Kurulumu kontrol et.';
-    console.error(result.error);
-    return;
-  }
+    if (!LAP_PATTERN.test(payload.lap_time)) {
+      $('lapMessage').textContent = LAP_FORMAT_MESSAGE;
+      return;
+    }
 
-  resetForm('lapForm', 'lapId', 'cancelLapEdit', 'lapMessage');
-  $('cancelLapEdit').hidden = true;
-  await refreshData();
-  notify(id ? 'Tur zamanı güncellendi.' : 'Tur zamanı eklendi.');
+    const result = id
+      ? await supabase.from('driver_lap_times').update(payload).eq('id', id)
+      : await supabase.from('driver_lap_times').insert(payload);
+
+    if (result.error) {
+      $('lapMessage').textContent = friendlyError(result.error, 'Tur zamanı kaydı');
+      console.error(result.error);
+      return;
+    }
+
+    resetForm('lapForm', 'lapId', 'cancelLapEdit', 'lapMessage');
+    $('cancelLapEdit').hidden = true;
+    $('lapMessage').textContent = id ? 'Tur zamanı güncellendi.' : 'Tur zamanı eklendi.';
+
+    await refreshData();
+    notify(id ? 'Tur zamanı güncellendi.' : 'Tur zamanı eklendi.');
+  });
 }
 
 function editLap(lap) {
@@ -1222,23 +1450,32 @@ async function saveSchedule(event) {
   event.preventDefault();
   if (!isAdmin || !supabase) return;
 
-  const id = $('scheduleId').value;
-  const payload = scheduleFormData();
+  await runSave($('scheduleForm'), 'scheduleMessage', async () => {
+    const id = $('scheduleId').value;
+    const payload = scheduleFormData();
 
-  const result = id
-    ? await supabase.from('race_schedule').update(payload).eq('id', id)
-    : await supabase.from('race_schedule').insert(payload);
+    if (!payload.event_name) {
+      $('scheduleMessage').textContent = 'Etkinlik adı boş bırakılamaz.';
+      return;
+    }
 
-  if (result.error) {
-    $('scheduleMessage').textContent = 'Takvim kaydı kaydedilemedi. Kurulumu kontrol et.';
-    console.error(result.error);
-    return;
-  }
+    const result = id
+      ? await supabase.from('race_schedule').update(payload).eq('id', id)
+      : await supabase.from('race_schedule').insert(payload);
 
-  resetForm('scheduleForm', 'scheduleId', 'cancelScheduleEdit', 'scheduleMessage');
-  $('cancelScheduleEdit').hidden = true;
-  await refreshData();
-  notify(id ? 'Takvim kaydı güncellendi.' : 'Takvime eklendi.');
+    if (result.error) {
+      $('scheduleMessage').textContent = friendlyError(result.error, 'Takvim kaydı');
+      console.error(result.error);
+      return;
+    }
+
+    resetForm('scheduleForm', 'scheduleId', 'cancelScheduleEdit', 'scheduleMessage');
+    $('cancelScheduleEdit').hidden = true;
+    $('scheduleMessage').textContent = id ? 'Takvim kaydı güncellendi.' : 'Takvime eklendi.';
+
+    await refreshData();
+    notify(id ? 'Takvim kaydı güncellendi.' : 'Takvime eklendi.');
+  });
 }
 
 function editSchedule(event) {
@@ -1249,7 +1486,7 @@ function editSchedule(event) {
   $('scheduleDate').value = event.event_date || '';
   $('scheduleTime').value = event.event_time ? String(event.event_time).slice(0, 5) : '';
   $('scheduleGame').value = event.game || '';
-  $('scheduleClass').value = event.race_class || 'Other';
+  $('scheduleClass').value = event.race_class || '';
   $('scheduleTrack').value = event.track || '';
   $('scheduleDrivers').value = event.drivers || '';
   $('scheduleCar').value = event.car || '';
@@ -1262,14 +1499,14 @@ function editSchedule(event) {
 
 /* KAYIT SİLME */
 
-async function deleteRecord(table, id, message) {
+async function deleteRecord(table, id, message, confirmText) {
   if (!isAdmin || !supabase) return;
-  if (!confirm('Bu kaydı silmek istediğine emin misin?')) return;
+  if (!confirm(confirmText || 'Bu kaydı silmek istediğine emin misin?')) return;
 
   const { error } = await supabase.from(table).delete().eq('id', id);
 
   if (error) {
-    notify('Silinemedi. Veritabanı yetkilerini kontrol et.');
+    notify(friendlyError(error, 'Silme işlemi'));
     console.error(error);
     return;
   }
@@ -1327,6 +1564,12 @@ $('teamGallery').addEventListener('keydown', event => {
   if (event.key === 'Enter' || event.key === ' ') {
     event.preventDefault();
     openGalleryModal();
+  } else if (event.key === 'ArrowLeft') {
+    event.preventDefault();
+    moveGallery(-1);
+  } else if (event.key === 'ArrowRight') {
+    event.preventDefault();
+    moveGallery(1);
   }
 });
 
@@ -1432,12 +1675,19 @@ document.querySelectorAll('[data-admin-tab]').forEach(button => {
   button.addEventListener('click', () => switchAdminTab(button.dataset.adminTab));
 });
 
-$('raceStatus').addEventListener('change', () => {
-  $('racePosition').disabled = $('raceStatus').value !== 'finished';
+$('raceStatus').addEventListener('change', syncPositionField);
+syncPositionField();
 
-  if ($('raceStatus').value !== 'finished') {
-    $('racePosition').value = '';
+document.addEventListener('click', event => {
+  if (!event.target.closest('[data-retry]')) return;
+
+  if (libraryFailed) {
+    location.reload();
+    return;
   }
+
+  refreshData();
+  loadTeamPhotos();
 });
 
 $('year').textContent = new Date().getFullYear();
@@ -1452,9 +1702,9 @@ if (configured && supabase) {
 
       if (isAdmin) {
         $('adminPanel').hidden = false;
-        await refreshData();
-        await loadTeamPhotos();
+        await loadAdminData(currentUser);
       } else {
+        adminLoadedFor = null;
         $('adminPanel').hidden = true;
         renderAdminPhotos();
       }
