@@ -107,6 +107,23 @@
         <label>ROL / KISA NOT<input id="driverTag" placeholder="Driver"></label>
         <label>KULLANDIĞI ARAÇ<input id="driverCar" placeholder="Peugeot 9X8"></label>
         <label class="full-width">ARAÇ FOTOĞRAFI LİNKİ (İSTEĞE BAĞLI)<input id="driverCarImage" type="url" placeholder="https://..."></label>
+          
+<label class="full-width">LFM PROFİL LİNKİ
+  <input id="driverLfmUrl" type="url" placeholder="https://lowfuelmotorsport.com/...">
+</label>
+<label>TOPLAM STARTS
+  <input id="driverStarts" type="number" min="0" step="1" value="0">
+</label>
+<label>TOPLAM WINS
+  <input id="driverWins" type="number" min="0" step="1" value="0">
+</label>
+<label>TOPLAM PODIUMS
+  <input id="driverPodiums" type="number" min="0" step="1" value="0">
+</label>
+<label>TOPLAM POLES
+  <input id="driverPoles" type="number" min="0" step="1" value="0">
+</label>
+
         <div class="form-actions full-width"><button id="driverSaveButton" class="primary-button" type="submit">PİLOTU KAYDET <span>↗</span></button><button id="cancelDriverEdit" class="outline-button" type="button" hidden>İPTAL</button><p id="driverMessage" class="form-message" role="status"></p></div>
       </form>
       <div class="admin-records"><h3>MEVCUT PİLOTLAR</h3><div id="adminDriverList"></div></div>
