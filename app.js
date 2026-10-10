@@ -56,7 +56,27 @@ function renderRaces(){
 }
 function showRaceDetail(r){if(!r)return;$('raceDetailContent').innerHTML=`<div class="detail-hero"><p class="eyebrow">RACE REPORT · ${safe(dateLabel(r.race_date))}</p><h2 id="raceDetailTitle">${safe(driverName(r.driver_id))}</h2><div class="detail-pos">${safe(positionText(r))}</div><span class="race-tag">${safe(r.race_class||'Other')}</span></div><div class="detail-meta"><div><small>CAR</small><strong>${safe(r.car||'—')}</strong></div><div><small>TRACK</small><strong>${safe(r.track||'—')}</strong></div><div><small>GAME</small><strong>${safe(r.game||'—')}</strong></div><div><small>BEST LAP</small><strong>${safe(r.best_lap||'—')}</strong></div></div>${r.notes?`<p class="detail-notes">${safe(r.notes)}</p>`:''}${r.image_url?`<p><a class="detail-link" href="${safe(r.image_url)}" target="_blank" rel="noopener">FOTOĞRAFI AÇ ↗</a></p>`:''}${r.lfm_url?`<a class="detail-link" href="${safe(r.lfm_url)}" target="_blank" rel="noopener">SONUÇ / LFM LİNKİ ↗</a>`:''}`;$('raceModal').hidden=false;}
 function recordRow(title, sub, actions){return `<div class="admin-record"><div><strong>${safe(title)}</strong><small>${safe(sub)}</small></div><div class="record-actions">${actions}</div></div>`;}
-function renderAdminDrivers(){ $('adminDriverList').innerHTML=drivers.length?drivers.map(d=>recordRow(`${d.name}${d.number!==null&&d.number!==undefined&&d.number!==''?` · #${d.number}`:''}`,`${d.tag||'Driver'}${d.main_car?' · '+d.main_car:''}${d.car_image_url?' · araç fotoğrafı var':''}`,`<button type="button" data-edit-driver="${safe(d.id)}">DÜZENLE</button><button type="button" data-delete-driver="${safe(d.id)}">SİL</button>`)).join(''):empty('HENÜZ PİLOT YOK','Yeni pilotu yukarıdaki formdan ekle.');
+
+function renderAdminDrivers(){
+  $('adminDriverList').innerHTML = drivers.length
+    ? drivers.map(d => recordRow(
+        `${d.name}${d.number!==null&&d.number!==undefined&&d.number!==''?` · #${d.number}`:''}`,
+        `${d.tag||'Driver'}${d.main_car?' · '+d.main_car:''}${d.car_image_url?' · araç fotoğrafı var':''} · ${Number(d.total_starts)||0} starts · ${Number(d.total_wins)||0} wins · ${Number(d.total_podiums)||0} podiums · ${Number(d.total_poles)||0} poles${d.lfm_profile_url?' · LFM profili ekli':''}`,
+        `<button type="button" data-edit-driver="${safe(d.id)}">DÜZENLE</button><button type="button" data-delete-driver="${safe(d.id)}">SİL</button>`
+      )).join('')
+    : empty('HENÜZ PİLOT YOK','Yeni pilotu yukarıdaki formdan ekle.');
+
+  $('adminDriverList').querySelectorAll('[data-edit-driver]')
+    .forEach(b => b.addEventListener('click', () =>
+      editDriver(drivers.find(d => String(d.id) === b.dataset.editDriver))
+    ));
+
+  $('adminDriverList').querySelectorAll('[data-delete-driver]')
+    .forEach(b => b.addEventListener('click', () =>
+      deleteDriver(b.dataset.deleteDriver)
+    ));
+}
+
  $('adminDriverList').querySelectorAll('[data-edit-driver]').forEach(b=>b.addEventListener('click',()=>editDriver(drivers.find(d=>String(d.id)===b.dataset.editDriver))));$('adminDriverList').querySelectorAll('[data-delete-driver]').forEach(b=>b.addEventListener('click',()=>deleteDriver(b.dataset.deleteDriver))); }
 function renderAdminRaces(){ $('adminRaceList').innerHTML=races.length?[...races].sort((a,b)=>String(b.race_date||'').localeCompare(String(a.race_date||''))).map(r=>recordRow(`${driverName(r.driver_id)} · ${positionText(r)}`,`${dateLabel(r.race_date)} · ${r.car||''} · ${r.track||''}`,`<button type="button" data-edit-race="${safe(r.id)}">DÜZENLE</button><button type="button" data-delete-race="${safe(r.id)}">SİL</button>`)).join(''):empty('YARIŞ KAYDI YOK','Yarışları kendin ekle.');$('adminRaceList').querySelectorAll('[data-edit-race]').forEach(b=>b.addEventListener('click',()=>editRace(races.find(r=>String(r.id)===b.dataset.editRace))));$('adminRaceList').querySelectorAll('[data-delete-race]').forEach(b=>b.addEventListener('click',()=>deleteRace(b.dataset.deleteRace))); }
 function renderLapTimes(){
@@ -82,9 +102,65 @@ async function refreshData(){
 async function handleLogin(e){e.preventDefault();if(!supabase){$('loginMessage').textContent='Supabase henüz yapılandırılmamış. README.md dosyasını izle.';return;}const button=$('loginForm').querySelector('button[type=submit]');button.disabled=true;$('loginMessage').textContent='Giriş kontrol ediliyor…';const {data,error}=await supabase.auth.signInWithPassword({email:$('loginEmail').value.trim(),password:$('loginPassword').value});button.disabled=false;if(error){$('loginMessage').textContent='Giriş başarısız. Bilgileri kontrol et.';return;}currentUser=data.user;isAdmin=await checkAdmin(currentUser);if(!isAdmin){await supabase.auth.signOut();currentUser=null;$('loginMessage').textContent='Bu hesapta admin yetkisi yok.';return;}$('loginModal').hidden=true;$('adminPanel').hidden=false;await refreshData();$('adminPanel').scrollIntoView({behavior:'smooth'});notify('Admin girişi başarılı.');}
 async function handleLogout(){if(supabase)await supabase.auth.signOut();currentUser=null;isAdmin=false;$('adminPanel').hidden=true;notify('Çıkış yapıldı.');}
 function resetForm(formId,hiddenId,buttonId,msgId){$(formId).reset();if(hiddenId)$(hiddenId).value='';if(buttonId)$(buttonId).hidden=true;if(msgId)$(msgId).textContent='';}
-function editDriver(d){if(!d)return;$('driverId').value=d.id;$('driverName').value=d.name||'';$('driverNumber').value=d.number??'';$('driverTag').value=d.tag||'';$('driverCar').value=d.main_car||'';$('driverCarImage').value=d.car_image_url||'';$('cancelDriverEdit').hidden=false;$('driverSaveButton').innerHTML='DEĞİŞİKLİKLERİ KAYDET';$('driverForm').scrollIntoView({behavior:'smooth',block:'center'});}
-async function saveDriver(e){e.preventDefault();if(!isAdmin||!supabase)return;const id=$('driverId').value;const payload={name:$('driverName').value.trim(),number:$('driverNumber').value===''?null:Number($('driverNumber').value),tag:$('driverTag').value.trim()||'Driver',main_car:$('driverCar').value.trim()||null,car_image_url:$('driverCarImage').value.trim()||null};const result=id?await supabase.from('drivers').update(payload).eq('id',id):await supabase.from('drivers').insert(payload);if(result.error){$('driverMessage').textContent='Pilot kaydedilemedi. İsim benzersiz olmalı; veritabanı sütunlarını kontrol et.';console.error(result.error);return;}resetForm('driverForm','driverId','cancelDriverEdit','driverMessage');$('driverSaveButton').innerHTML='PİLOTU KAYDET <span>↗</span>';$('cancelDriverEdit').hidden=true;await refreshData();notify(id?'Pilot güncellendi.':'Pilot eklendi.');}
-async function deleteDriver(id){if(!isAdmin||!supabase||!confirm('Bu pilotu ve ona bağlı yarış/tur zamanı kayıtlarını silmek istiyor musun?'))return;const {error}=await supabase.from('drivers').delete().eq('id',id);if(error){notify('Pilot silinemedi. Veritabanı yetkilerini kontrol et.');console.error(error);return;}await refreshData();notify('Pilot ve bağlı kayıtları silindi.');}
+
+function editDriver(d){
+  if(!d)return;
+  $('driverId').value=d.id;
+  $('driverName').value=d.name||'';
+  $('driverNumber').value=d.number??'';
+  $('driverTag').value=d.tag||'Driver';
+  $('driverCar').value=d.main_car||'';
+  $('driverCarImage').value=d.car_image_url||'';
+
+  $('driverLfmUrl').value=d.lfm_profile_url||'';
+  $('driverStarts').value=d.total_starts??0;
+  $('driverWins').value=d.total_wins??0;
+  $('driverPodiums').value=d.total_podiums??0;
+  $('driverPoles').value=d.total_poles??0;
+
+  $('cancelDriverEdit').hidden=false;
+  $('driverSaveButton').innerHTML='DEĞİŞİKLİKLERİ KAYDET';
+  $('driverForm').scrollIntoView({behavior:'smooth',block:'center'});
+}
+
+
+async function saveDriver(e){
+  e.preventDefault();
+  if(!isAdmin||!supabase)return;
+
+  const id=$('driverId').value;
+
+  const payload={
+    name:$('driverName').value.trim(),
+    number:$('driverNumber').value===''?null:Number($('driverNumber').value),
+    tag:$('driverTag').value.trim()||'Driver',
+    main_car:$('driverCar').value.trim()||null,
+    car_image_url:$('driverCarImage').value.trim()||null,
+    lfm_profile_url:$('driverLfmUrl').value.trim()||null,
+    total_starts:Math.max(0,Math.floor(Number($('driverStarts').value)||0)),
+    total_wins:Math.max(0,Math.floor(Number($('driverWins').value)||0)),
+    total_podiums:Math.max(0,Math.floor(Number($('driverPodiums').value)||0)),
+    total_poles:Math.max(0,Math.floor(Number($('driverPoles').value)||0))
+  };
+
+  const result=id
+    ?await supabase.from('drivers').update(payload).eq('id',id)
+    :await supabase.from('drivers').insert(payload);
+
+  if(result.error){
+    $('driverMessage').textContent='Pilot kaydedilemedi. Alanları ve veritabanı sütunlarını kontrol et.';
+    console.error(result.error);
+    return;
+  }
+
+  resetForm('driverForm','driverId','cancelDriverEdit','driverMessage');
+  $('driverSaveButton').innerHTML='PİLOTU KAYDET <span>↗</span>';
+  $('cancelDriverEdit').hidden=true;
+
+  await refreshData();
+  notify(id?'Pilot güncellendi.':'Pilot eklendi.');
+}
+
 function raceFormData(){const status=$('raceStatus').value;return {driver_id:$('raceDriver').value,race_date:$('raceDate').value,game:$('raceGame').value.trim(),race_class:$('raceClass').value,car:$('raceCar').value.trim(),track:$('raceTrack').value.trim(),status,position:status==='finished'&&$('racePosition').value?Number($('racePosition').value):null,best_lap:$('raceLap').value.trim()||null,lfm_url:$('raceUrl').value.trim()||null,image_url:$('raceImage').value.trim()||null,notes:$('raceNotes').value.trim()||null};}
 async function saveRace(e){e.preventDefault();if(!isAdmin||!supabase)return;if(!drivers.length){$('raceMessage').textContent='Önce Pilotlar sekmesinden bir pilot ekle.';return;}const id=$('raceId').value,payload=raceFormData();const {error}=id?await supabase.from('race_results').update(payload).eq('id',id):await supabase.from('race_results').insert(payload);if(error){$('raceMessage').textContent='Kayıt yapılamadı. Alanları ve Supabase kurulumunu kontrol et.';console.error(error);return;}resetForm('raceForm','raceId','cancelEdit','raceMessage');$('cancelEdit').hidden=true;await refreshData();notify(id?'Yarış güncellendi.':'Yarış eklendi.');}
 function editRace(r){if(!r)return;$('raceId').value=r.id;$('raceDriver').value=r.driver_id;$('raceDate').value=r.race_date||'';$('raceGame').value=r.game||'';$('raceClass').value=r.race_class||'Other';$('raceCar').value=r.car||'';$('raceTrack').value=r.track||'';$('raceStatus').value=r.status||'finished';$('racePosition').value=r.position||'';$('raceLap').value=r.best_lap||'';$('raceUrl').value=r.lfm_url||'';$('raceImage').value=r.image_url||'';$('raceNotes').value=r.notes||'';$('cancelEdit').hidden=false;$('raceForm').scrollIntoView({behavior:'smooth',block:'center'});}
