@@ -53,10 +53,40 @@ function fillDriverSelects() {
 }
 
 
+
 function renderStats() {
-  const finishedRaces = races.filter(r =>
-    String(r.status || 'finished').toLowerCase() === 'finished'
+  const totalWins = drivers.reduce(
+    (sum, d) => sum + (Number(d.total_wins) || 0), 0
   );
+
+  const totalStarts = drivers.reduce(
+    (sum, d) => sum + (Number(d.total_starts) || 0), 0
+  );
+
+  const totalPodiums = drivers.reduce(
+    (sum, d) => sum + (Number(d.total_podiums) || 0), 0
+  );
+
+  const totalPoles = drivers.reduce(
+    (sum, d) => sum + (Number(d.total_poles) || 0), 0
+  );
+
+  if ($('statWins')) $('statWins').textContent = totalWins;
+  if ($('statStarts')) $('statStarts').textContent = totalStarts;
+
+  // DNF kartını kaldır
+  const dnfEl = $('statDnfs');
+  if (dnfEl) {
+    const card = dnfEl.closest('.stat-card, .stat-item, .stat');
+    if (card) card.remove();
+    else dnfEl.remove();
+  }
+
+  // Podiums ve poles için HTML'de bu ID'ler varsa onları da güncelle
+  if ($('statPodiums')) $('statPodiums').textContent = totalPodiums;
+  if ($('statPoles')) $('statPoles').textContent = totalPoles;
+}
+
 
   const wins = finishedRaces.filter(r => Number(r.position) === 1).length;
 
