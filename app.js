@@ -26,6 +26,7 @@ let drivers = [];
 let races = [];
 let lapTimes = [];
 let schedule = [];
+let applications = [];
 let teamPhotos = [];
 let currentPhotoIndex = 0;
 let currentUser = null;
@@ -396,7 +397,7 @@ function renderDrivers() {
         const podiums = Number(driver.total_podiums) || 0;
         const poles = Number(driver.total_poles) || 0;
 
-        return `<article class="driver-card" data-number="${safe(driver.number ?? '—')}">
+        return `<article class="driver-card" data-driver-id="${safe(driver.id)}" tabindex="0" role="button" aria-label="${safe(driver.name)} profili" data-number="${safe(driver.number ?? '—')}">
           ${carImage
             ? `<img class="driver-car-image"
                 src="${safe(carImage)}"
@@ -426,6 +427,7 @@ function renderDrivers() {
                 target="_blank"
                 rel="noopener noreferrer">LFM PROFİLİ ↗</a>`
             : ''}
+          <div class="driver-more">PROFİLİ GÖR →</div>
         </article>`;
       }).join('')
     : stateBox('drivers', false, empty('PİLOTLAR EKLENMEDİ', 'Pilotlar admin panelinden eklenir.'));
@@ -1173,6 +1175,8 @@ function rerender() {
   renderLapTimes();
   renderSchedule();
   renderAdminPhotos();
+  renderAdminApps();
+  openPilotFromHash();
 }
 
 /* ADMIN GİRİŞİ */
@@ -1270,6 +1274,7 @@ async function loadAdminData(user) {
   adminLoadedFor = user.id;
   await refreshData();
   await loadTeamPhotos();
+  await loadApplications();
 }
 
 async function handleLogin(event) {
@@ -1718,6 +1723,7 @@ function switchAdminTab(tab) {
   $('adminLapView').hidden = tab !== 'lap';
   $('adminScheduleView').hidden = tab !== 'schedule';
   $('adminPhotosView').hidden = tab !== 'photos';
+  $('adminAppsView').hidden = tab !== 'apps';
 
   if (tab === 'photos') {
     loadTeamPhotos();
@@ -1799,6 +1805,7 @@ document.addEventListener('keydown', event => {
   if (event.key === 'Escape') {
     $('loginModal').hidden = true;
     $('raceModal').hidden = true;
+    closeDriverProfile();
     closePhotoModal();
     closeGalleryModal();
     document.body.classList.remove('modal-open');
@@ -1812,6 +1819,258 @@ document.addEventListener('keydown', event => {
   } else if (galleryOpen && event.key === 'ArrowRight') {
     event.preventDefault();
     moveGallery(1);
+  }
+});
+
+
+/* ===== PİLOT PROFİLİ ===== */
+
+const lapToMs = text => {
+  const m = String(text || '').match(/^(?:(\d{1,2}):)?(\d{1,2})\.(\d{1,3})$/);
+  if (!m) return Infinity;
+  return (Number(m[1] || 0) * 60 + Number(m[2])) * 1000 + Number(m[3].padEnd(3, '0'));
+};
+
+let openedPilotId = null;
+
+function profileUrl(id) {
+  return `${location.href.split('#')[0]}#pilot=${encodeURIComponent(id)}`;
+}
+
+function openDriverProfile(id, { updateHash = true } = {}) {
+  const driver = drivers.find(d => String(d.id) === String(id));
+  if (!driver) return;
+  openedPilotId = driver.id;
+
+  const carImage = safeUrl(driver.car_image_url);
+  const lfm = safeUrl(driver.lfm_profile_url);
+  const hasNumber = driver.number !== null && driver.number !== undefined && driver.number !== '';
+
+  /* Her pist + araç için en iyi tur */
+  const bestMap = new Map();
+  lapTimes
+    .filter(l => String(l.driver_id) === String(driver.id))
+    .forEach(l => {
+      const key = `${l.track}|${l.car}|${l.game}`;
+      const prev = bestMap.get(key);
+      if (!prev || lapToMs(l.lap_time) < lapToMs(prev.lap_time)) bestMap.set(key, l);
+    });
+  const bestLaps = [...bestMap.values()]
+    .sort((a, b) => String(b.lap_date || '').localeCompare(String(a.lap_date || '')))
+    .slice(0, 8);
+
+  const driverRaces = races
+    .filter(r => String(r.driver_id) === String(driver.id))
+    .sort((a, b) => String(b.race_date || '').localeCompare(String(a.race_date || '')))
+    .slice(0, 8);
+
+  $('driverProfileContent').innerHTML = `
+    <div class="dp-head">
+      <div class="dp-num">${hasNumber ? safe(driver.number) : '—'}</div>
+      <div>
+        <h2 id="driverProfileTitle">${safe(driver.name)}</h2>
+        <div class="dp-sub">${safe(driver.tag || 'Driver')}${driver.main_car ? ' · ' + safe(driver.main_car) : ''}</div>
+      </div>
+    </div>
+    ${carImage ? `<img class="dp-img" src="${safe(carImage)}" alt="${safe(driver.name)} — ${safe(driver.main_car || 'araç')}" loading="lazy" onerror="this.hidden=true">` : ''}
+    <div class="dp-stats">
+      <div><strong>${Number(driver.total_starts) || 0}</strong><small>STARTS</small></div>
+      <div><strong>${Number(driver.total_wins) || 0}</strong><small>WINS</small></div>
+      <div><strong>${Number(driver.total_podiums) || 0}</strong><small>PODIUMS</small></div>
+      <div><strong>${Number(driver.total_poles) || 0}</strong><small>POLES</small></div>
+    </div>
+    <h3 class="dp-h">EN İYİ TURLAR</h3>
+    ${bestLaps.length
+      ? bestLaps.map(l => `<div class="dp-row"><b>${safe(l.lap_time)}</b><span>${safe(l.track)} · ${safe(l.car)}</span></div>`).join('')
+      : '<p class="form-message">Henüz tur zamanı eklenmedi.</p>'}
+    <h3 class="dp-h">SON YARIŞLAR</h3>
+    ${driverRaces.length
+      ? driverRaces.map(r => `<button type="button" class="dp-row" data-profile-race="${safe(r.id)}"><b>${safe(positionText(r))} · ${safe(r.track || '—')}</b><span>${safe(r.car || '')} · ${safe(dateLabel(r.race_date))}</span></button>`).join('')
+      : '<p class="form-message">Henüz yarış kaydı yok.</p>'}
+    <div class="dp-actions">
+      <button type="button" class="primary-button" data-share-pilot>LİNKİ KOPYALA ↗</button>
+      ${lfm ? `<a class="outline-button" href="${safe(lfm)}" target="_blank" rel="noopener noreferrer">LFM PROFİLİ ↗</a>` : ''}
+    </div>
+  `;
+
+  $('driverModal').hidden = false;
+  document.body.classList.add('modal-open');
+  if (updateHash && location.hash !== `#pilot=${encodeURIComponent(driver.id)}`) {
+    history.replaceState(null, '', profileUrl(driver.id));
+  }
+}
+
+function closeDriverProfile() {
+  if (!$('driverModal') || $('driverModal').hidden) return;
+  $('driverModal').hidden = true;
+  openedPilotId = null;
+  document.body.classList.remove('modal-open');
+  if (location.hash.startsWith('#pilot=')) {
+    history.replaceState(null, '', location.href.split('#')[0]);
+  }
+}
+
+function openPilotFromHash() {
+  const match = location.hash.match(/^#pilot=(.+)$/);
+  if (!match || !dataLoaded) return;
+  const id = decodeURIComponent(match[1]);
+  if (String(openedPilotId) === id) return;
+  if (drivers.some(d => String(d.id) === id)) openDriverProfile(id, { updateHash: false });
+}
+
+$('driverCards').addEventListener('click', event => {
+  if (event.target.closest('a')) return;
+  const card = event.target.closest('[data-driver-id]');
+  if (card) openDriverProfile(card.dataset.driverId);
+});
+
+$('driverCards').addEventListener('keydown', event => {
+  if (event.key !== 'Enter' && event.key !== ' ') return;
+  const card = event.target.closest('[data-driver-id]');
+  if (!card || event.target.closest('a')) return;
+  event.preventDefault();
+  openDriverProfile(card.dataset.driverId);
+});
+
+$('driverProfileContent').addEventListener('click', async event => {
+  const raceBtn = event.target.closest('[data-profile-race]');
+  if (raceBtn) {
+    const race = races.find(r => String(r.id) === raceBtn.dataset.profileRace);
+    closeDriverProfile();
+    showRaceDetail(race);
+    return;
+  }
+  if (event.target.closest('[data-share-pilot]')) {
+    const url = profileUrl(openedPilotId);
+    try {
+      await navigator.clipboard.writeText(url);
+      notify('Profil linki kopyalandı.');
+    } catch {
+      window.prompt('Linki kopyala:', url);
+    }
+  }
+});
+
+document.querySelectorAll('[data-close-driver]').forEach(element => {
+  element.addEventListener('click', closeDriverProfile);
+});
+
+addEventListener('hashchange', () => {
+  if (location.hash.startsWith('#pilot=')) openPilotFromHash();
+  else if (openedPilotId) closeDriverProfile();
+});
+
+/* ===== TAKIMA KATILMA FORMU ===== */
+
+const JOIN_COOLDOWN_KEY = 'crescentJoinLast';
+
+$('joinForm').addEventListener('submit', async event => {
+  event.preventDefault();
+  const out = $('joinMessageOut');
+  const name = $('joinName').value.trim();
+  const contact = $('joinContact').value.trim();
+
+  if ($('joinWebsite').value) { out.textContent = 'Başvurun alındı, teşekkürler!'; return; } /* bot tuzağı */
+  if (name.length < 2) { out.textContent = 'Lütfen adını yaz.'; return; }
+  if (contact.length < 3) { out.textContent = 'Lütfen Discord adını ya da e-postanı yaz.'; return; }
+  if (!$('joinConsent').checked) { out.textContent = 'Devam etmek için onay kutusunu işaretle.'; return; }
+  if (!supabase) { out.textContent = 'Şu an başvuru alınamıyor. Daha sonra tekrar dene.'; return; }
+
+  try {
+    const last = Number(localStorage.getItem(JOIN_COOLDOWN_KEY) || 0);
+    if (Date.now() - last < 60000) { out.textContent = 'Birkaç saniye bekleyip tekrar dene.'; return; }
+  } catch { /* depolama kapalıysa devam et */ }
+
+  const button = event.currentTarget.querySelector('button[type="submit"]');
+  button.disabled = true;
+  out.textContent = 'Gönderiliyor…';
+
+  const { error } = await supabase.from('applications').insert({
+    name,
+    contact,
+    sims: $('joinSims').value.trim() || null,
+    experience: $('joinExp').value,
+    message: $('joinMessage').value.trim() || null
+  });
+
+  button.disabled = false;
+
+  if (error) {
+    console.error(error);
+    out.textContent = error.code === '42P01'
+      ? 'Başvuru sistemi henüz kurulmamış. Yönetime haber ver.'
+      : 'Başvuru gönderilemedi. Alanları kontrol edip tekrar dene.';
+    return;
+  }
+
+  try { localStorage.setItem(JOIN_COOLDOWN_KEY, String(Date.now())); } catch { /* yoksay */ }
+  $('joinForm').reset();
+  out.textContent = 'Başvurun alındı, teşekkürler! Seninle iletişime geçeceğiz.';
+});
+
+/* ===== ADMİN: BAŞVURULAR ===== */
+
+const EXP_LABELS = { beginner: 'Yeni başlıyor', intermediate: 'Orta seviye', experienced: 'Deneyimli' };
+
+async function loadApplications() {
+  if (!isAdmin || !supabase) return;
+  const { data, error } = await supabase
+    .from('applications')
+    .select('*')
+    .order('created_at', { ascending: false });
+
+  if (error) {
+    console.error('Başvurular yüklenemedi:', error);
+    $('adminAppsList').innerHTML = empty(
+      'BAŞVURULAR YÜKLENEMEDİ',
+      error.code === '42P01' ? 'applications tablosu yok. yeni_ozellikler.sql dosyasını Supabase SQL Editor\'da çalıştır.' : 'Bağlantıyı kontrol et.'
+    );
+    return;
+  }
+  applications = data || [];
+  renderAdminApps();
+}
+
+function renderAdminApps() {
+  if (!$('adminAppsList')) return;
+  const unread = applications.filter(a => a.status === 'new').length;
+  $('appsBadge').textContent = unread ? String(unread) : '';
+
+  if (!applications.length) {
+    if (isAdmin) $('adminAppsList').innerHTML = empty('HENÜZ BAŞVURU YOK', 'Gelen başvurular burada görünecek.');
+    return;
+  }
+
+  $('adminAppsList').innerHTML = applications.map(a => `
+    <div class="admin-record">
+      <div>
+        <strong>${a.status === 'new' ? '<span class="app-new">● YENİ</span> ' : ''}${safe(a.name)} · ${safe(a.contact)}</strong>
+        <small>${safe(EXP_LABELS[a.experience] || '—')}${a.sims ? ' · ' + safe(a.sims) : ''} · ${safe(new Date(a.created_at).toLocaleString('tr-TR'))}</small>
+        ${a.message ? `<p class="app-msg">${safe(a.message)}</p>` : ''}
+      </div>
+      <div class="record-actions">
+        ${a.status === 'new' ? `<button type="button" data-app-read="${safe(a.id)}">OKUNDU</button>` : ''}
+        <button type="button" data-app-del="${safe(a.id)}">SİL</button>
+      </div>
+    </div>`).join('');
+}
+
+$('adminAppsList').addEventListener('click', async event => {
+  const read = event.target.closest('[data-app-read]');
+  const del = event.target.closest('[data-app-del]');
+  if (!isAdmin || !supabase) return;
+
+  if (read) {
+    const { error } = await supabase.from('applications').update({ status: 'read' }).eq('id', read.dataset.appRead);
+    if (error) { notify(friendlyError(error, 'Güncelleme')); return; }
+    await loadApplications();
+  }
+  if (del) {
+    if (!confirm('Bu başvuru silinsin mi?')) return;
+    const { error } = await supabase.from('applications').delete().eq('id', del.dataset.appDel);
+    if (error) { notify(friendlyError(error, 'Silme işlemi')); return; }
+    await loadApplications();
+    notify('Başvuru silindi.');
   }
 });
 

@@ -811,3 +811,42 @@ a.photo-failed:hover { color: #dfe1e4; }
 @media (max-width: 650px) {
   .lap-card:not(.lap-with-photo) { grid-template-columns: minmax(58px, auto) minmax(0, 1fr); }
 }
+
+
+/* ===== PİLOT PROFİLİ ===== */
+.driver-card[data-driver-id] { cursor: pointer; transition: transform .2s, border-color .2s; }
+.driver-card[data-driver-id]:hover { transform: translateY(-4px); border-color: #8f959c; }
+.driver-profile-card { width: min(100%, 680px); max-height: 90vh; overflow-y: auto; }
+.dp-head { display: flex; align-items: flex-end; gap: 18px; padding: 6px 0 20px; border-bottom: 1px solid var(--line); }
+.dp-num { font-family: var(--display); font-size: 74px; line-height: .85; color: transparent; -webkit-text-stroke: 1px #6f747b; }
+.dp-head h2 { margin: 0 0 6px; font-family: var(--display); font-size: 42px; }
+.dp-sub { color: #92979e; font-size: 11px; letter-spacing: 1.4px; text-transform: uppercase; }
+.dp-img { width: 100%; max-height: 190px; object-fit: cover; margin-top: 18px; border: 1px solid var(--line); }
+.dp-stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-top: 18px; }
+.dp-stats div { padding: 12px; border: 1px solid var(--line); text-align: center; }
+.dp-stats strong { display: block; font-family: var(--display); font-size: 32px; line-height: 1; }
+.dp-stats small { color: #92979e; font-size: 8px; letter-spacing: 1.4px; }
+.dp-h { margin: 24px 0 8px; font-size: 10px; letter-spacing: 2px; color: #a4a9b0; }
+.dp-row { width: 100%; display: flex; justify-content: space-between; gap: 12px; padding: 10px 12px; margin-bottom: 6px; border: 1px solid var(--line); background: #0f1114; color: inherit; font: inherit; font-size: 12px; text-align: left; }
+button.dp-row { cursor: pointer; }
+button.dp-row:hover { border-color: #8f959c; background: #15181c; }
+.dp-row b { font-weight: 600; }
+.dp-row span { color: #92979e; }
+.dp-actions { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 22px; }
+@media (max-width: 520px) { .dp-stats { grid-template-columns: repeat(2, 1fr); } .dp-num { font-size: 56px; } }
+
+/* ===== KATILMA FORMU ===== */
+.join-form { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; padding: 26px; border: 1px solid var(--line); background: var(--panel); }
+.join-form label { display: flex; flex-direction: column; gap: 7px; color: #a4a9b0; font-size: 9px; font-weight: 700; letter-spacing: 1.3px; }
+.join-form input:not([type=checkbox]), .join-form select, .join-form textarea { padding: 12px; border: 1px solid #30343a; background: #0b0c0e; color: var(--text); font: inherit; font-size: 13px; letter-spacing: 0; }
+.join-form input:focus, .join-form select:focus, .join-form textarea:focus { outline: none; border-color: #9aa0a6; }
+.join-form .full-width { grid-column: 1 / -1; }
+.join-form .check { flex-direction: row; align-items: flex-start; gap: 10px; font-size: 11px; font-weight: 500; letter-spacing: 0; line-height: 1.5; }
+.join-form .check input { margin-top: 2px; }
+.join-form .hp { position: absolute; left: -9999px; width: 1px; height: 1px; opacity: 0; }
+@media (max-width: 650px) { .join-form { grid-template-columns: 1fr; padding: 18px; } }
+#appsBadge:not(:empty) { margin-left: 6px; padding: 1px 6px; border-radius: 99px; background: #f1f2f3; color: #090a0c; }
+.app-msg { margin: 6px 0 0; color: #b4b9bf; font-size: 12px; line-height: 1.5; white-space: pre-wrap; overflow-wrap: anywhere; }
+.app-new { color: #59d98e; }
+.driver-more { margin-top: 12px; color: #7d828a; font-size: 9px; font-weight: 700; letter-spacing: 1.4px; transition: color .2s; }
+.driver-card[data-driver-id]:hover .driver-more { color: #f1f2f3; }

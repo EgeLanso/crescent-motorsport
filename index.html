@@ -7,6 +7,19 @@
   <meta name="theme-color" content="#090a0c">
   <meta name="description" content="Crescent Motorsport — sim racing, endurance, clean driving.">
   <title>Crescent Motorsport</title>
+  <!-- Paylaşım önizlemesi: KULLANICI ve REPO yerine kendi GitHub adın ve repo adını yaz -->
+  <meta property="og:type" content="website">
+  <meta property="og:site_name" content="Crescent Motorsport">
+  <meta property="og:title" content="Crescent Motorsport">
+  <meta property="og:description" content="Sim racing, endurance, temiz yarış. Pilotlar, sonuçlar, tur zamanları ve takvim.">
+  <meta property="og:url" content="https://KULLANICI.github.io/REPO/">
+  <meta property="og:image" content="https://KULLANICI.github.io/REPO/og.png">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="Crescent Motorsport">
+  <meta name="twitter:description" content="Sim racing, endurance, temiz yarış.">
+  <meta name="twitter:image" content="https://KULLANICI.github.io/REPO/og.png">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -26,6 +39,7 @@
       <a href="#drivers">PİLOTLAR</a>
       <a href="#lap-times">TUR ZAMANLARI</a>
       <a href="#schedule">TAKVİM</a>
+      <a href="#join">KATIL</a>
     </nav>
     <button id="loginOpen" class="login-button" type="button">GİRİŞ <span aria-hidden="true">↗</span></button>
   </header>
@@ -148,8 +162,32 @@
       </div>
     </section>
 
+    <section id="join" class="drivers-section join-section">
+      <div class="section-heading">
+        <div><p class="eyebrow">06 / JOIN THE TEAM</p><h2>TAKIMA <span>KATIL</span></h2></div>
+        <p class="heading-note">Sim racing ve endurance seviyorsan bize yaz.<br>Başvurular sadece yönetime görünür.</p>
+      </div>
+      <form id="joinForm" class="join-form" novalidate>
+        <label>ADIN / TAKMA ADIN<input id="joinName" required minlength="2" maxlength="80" placeholder="Pilot adın" autocomplete="nickname"></label>
+        <label>İLETİŞİM (DISCORD VEYA E-POSTA)<input id="joinContact" required minlength="3" maxlength="120" placeholder="kullanici#0000 veya mail@..." autocomplete="off"></label>
+        <label>OYNADIĞIN SİMÜLATÖRLER<input id="joinSims" maxlength="200" placeholder="ACC, iRacing, LMU…"></label>
+        <label>DENEYİM<select id="joinExp">
+          <option value="beginner">Yeni başlıyorum</option>
+          <option value="intermediate" selected>Orta seviye</option>
+          <option value="experienced">Deneyimliyim</option>
+        </select></label>
+        <label class="full-width">KENDİNDEN BAHSET<textarea id="joinMessage" rows="3" maxlength="1000" placeholder="Hangi araçları, pistleri ya da yarış türlerini seviyorsun?"></textarea></label>
+        <input id="joinWebsite" class="hp" type="text" tabindex="-1" autocomplete="off" aria-hidden="true">
+        <label class="check full-width"><input id="joinConsent" type="checkbox" required> Bilgilerimin başvurumu değerlendirmek için takım yönetimi tarafından görülmesini kabul ediyorum.</label>
+        <div class="form-actions full-width">
+          <button class="primary-button" type="submit">BAŞVURUYU GÖNDER <span>↗</span></button>
+          <p id="joinMessageOut" class="form-message" role="status"></p>
+        </div>
+      </form>
+    </section>
+
     <section id="about" class="about-section">
-      <p class="eyebrow">06 / OUR PRINCIPLES</p>
+      <p class="eyebrow">07 / OUR PRINCIPLES</p>
       <h2>RACE HARD.<br><span>RACE CLEAN.</span></h2>
       <p>Crescent Motorsport, sim racing ve endurance yarışlarına odaklanan bir ekip. Hedefimiz yalnızca hızlı olmak değil; saygılı yarışmak, sınırlarımızı geliştirmek ve birlikte ilerlemek.</p>
       <div class="principles"><span>01 — DISCIPLINE</span><span>02 — RESPECT</span><span>03 — PROGRESS</span></div>
@@ -182,6 +220,14 @@
     </section>
   </div>
 
+  <div id="driverModal" class="modal" hidden>
+    <div class="modal-backdrop" data-close-driver></div>
+    <section class="modal-card driver-profile-card" role="dialog" aria-modal="true" aria-labelledby="driverProfileTitle">
+      <button class="modal-close" type="button" data-close-driver aria-label="Kapat">×</button>
+      <div id="driverProfileContent"></div>
+    </section>
+  </div>
+
   <div id="loginModal" class="modal" hidden>
     <div class="modal-backdrop" data-close-modal></div>
     <section class="modal-card" role="dialog" aria-modal="true" aria-labelledby="loginTitle">
@@ -211,6 +257,7 @@
       <button class="admin-tab" data-admin-tab="lap" type="button">TUR ZAMANLARI</button>
       <button class="admin-tab" data-admin-tab="schedule" type="button">TAKVİM</button>
       <button class="admin-tab" data-admin-tab="photos" type="button">TAKIM FOTOĞRAFLARI</button>
+      <button class="admin-tab" data-admin-tab="apps" type="button">BAŞVURULAR <span id="appsBadge"></span></button>
     </div>
 
     <div id="adminDriverView" class="admin-view">
@@ -318,6 +365,12 @@
         </div>
       </form>
       <div class="admin-records"><h3>STORAGE FOTOĞRAFLARI</h3><div id="adminPhotoList"></div></div>
+    </div>
+
+    <div id="adminAppsView" class="admin-view" hidden>
+      <h3 class="admin-form-title">TAKIMA KATILMA BAŞVURULARI</h3>
+      <p class="admin-help">Siteden gelen başvurular burada listelenir. Okuduğunu işaretleyebilir ya da silebilirsin.</p>
+      <div class="admin-records"><div id="adminAppsList"></div></div>
     </div>
 
     <p class="admin-warning">İçerikler Supabase üzerinden yönetilir. Fotoğraf yükleme ve silme işlemlerinin çalışması için Storage erişim politikaları doğru yapılandırılmış olmalıdır.</p>
