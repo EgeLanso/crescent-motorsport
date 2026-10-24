@@ -1,14 +1,14 @@
 
 :root {
   color-scheme: dark;
-  --bg: #090a0c;
-  --panel: #111316;
-  --panel2: #17191d;
-  --line: #292c31;
-  --text: #f1f2f3;
-  --muted: #8e939a;
-  --silver: #c5c9ce;
-  --accent: #f4f5f6;
+  --bg: #0f1012;
+  --panel: #16191d;
+  --panel2: #1c1f24;
+  --line: #27292e;
+  --text: #f5f5f5;
+  --muted: #9a9fa7;
+  --silver: #d0d5db;
+  --accent: #d4a26e;
   --font: 'Inter', sans-serif;
   --display: 'Barlow Condensed', sans-serif;
 }
@@ -46,8 +46,8 @@ select:focus-visible, textarea:focus-visible, [tabindex]:focus-visible {
 ::selection { background: #e8eaed; color: #090a0c; }
 
 .topline {
-  height: 3px;
-  background: linear-gradient(90deg, #777, #f4f5f6 48%, #777);
+  height: 2px;
+  background: linear-gradient(90deg, #d0d5db 30%, transparent 50%, #d0d5db 70%);
 }
 
 .site-header {
@@ -409,7 +409,7 @@ select { cursor: pointer; }
   transition: background .2s, border-color .2s;
 }
 #raceList .race-card[role="button"] { cursor: pointer; }
-#raceList .race-card[role="button"]:hover, .race-card:hover { background: #15171b; border-color: #484d54; }
+#raceList .race-card[role="button"]:hover, .race-card:hover { background: var(--panel2); border-color: #3a3f46; transition: background .3s ease, border-color .3s ease; }
 .race-position { font-family: var(--display); font-size: 32px; font-weight: 700; line-height: 1; }
 .race-position small { display: block; margin-top: 7px; color: #858b93; font-family: var(--font); font-size: 8px; letter-spacing: 1.5px; }
 .race-main { min-width: 0; }
