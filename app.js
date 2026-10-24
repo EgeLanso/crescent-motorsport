@@ -2049,6 +2049,7 @@ function renderAdminApps() {
         ${a.message ? `<p class="app-msg">${safe(a.message)}</p>` : ''}
       </div>
       <div class="record-actions">
+        <button type="button" data-app-accept="${safe(a.id)}">TAKIMA AL</button>
         ${a.status === 'new' ? `<button type="button" data-app-read="${safe(a.id)}">OKUNDU</button>` : ''}
         <button type="button" data-app-del="${safe(a.id)}">SİL</button>
       </div>
@@ -2056,10 +2057,15 @@ function renderAdminApps() {
 }
 
 $('adminAppsList').addEventListener('click', async event => {
+  const accept = event.target.closest('[data-app-accept]');
   const read = event.target.closest('[data-app-read]');
   const del = event.target.closest('[data-app-del]');
   if (!isAdmin || !supabase) return;
 
+  if (accept) {
+    const app = applications.find(a => String(a.id) === String(accept.dataset.appAccept));
+    if (app) openAcceptAppModal(app);
+  }
   if (read) {
     const { error } = await supabase.from('applications').update({ status: 'read' }).eq('id', read.dataset.appRead);
     if (error) { notify(friendlyError(error, 'Güncelleme')); return; }
@@ -2073,6 +2079,74 @@ $('adminAppsList').addEventListener('click', async event => {
     notify('Başvuru silindi.');
   }
 });
+
+function openAcceptAppModal(app) {
+  $('acceptAppId').value = app.id;
+  $('acceptAppName').value = app.name || '';
+  $('acceptAppNumber').value = app.number || '';
+  $('acceptAppTag').value = app.tag || 'Driver';
+  $('acceptAppCar').value = app.main_car || '';
+  $('acceptAppSims').value = app.sims || '';
+  $('acceptAppMessage').value = app.message || '';
+  $('acceptAppMessage').textContent = '';
+  $('acceptAppModal').hidden = false;
+  document.body.classList.add('modal-open');
+  $('acceptAppName').focus();
+}
+
+async function acceptApplication(event) {
+  event.preventDefault();
+  if (!isAdmin || !supabase) return;
+
+  await runSave($('acceptAppForm'), 'acceptAppMessage', async () => {
+    const appId = $('acceptAppId').value;
+    const app = applications.find(a => String(a.id) === String(appId));
+    if (!app) {
+      $('acceptAppMessage').textContent = 'Başvuru bulunamadı.';
+      return;
+    }
+
+    const payload = {
+      name: $('acceptAppName').value.trim(),
+      number: $('acceptAppNumber').value === '' ? null : Number($('acceptAppNumber').value),
+      tag: $('acceptAppTag').value.trim() || 'Driver',
+      main_car: $('acceptAppCar').value.trim() || null,
+      car_image_url: null,
+      lfm_profile_url: null,
+      total_starts: 0,
+      total_wins: 0,
+      total_podiums: 0,
+      total_poles: 0
+    };
+
+    if (!payload.name) {
+      $('acceptAppMessage').textContent = 'Pilot adı boş bırakılamaz.';
+      return;
+    }
+
+    const result = await supabase.from('drivers').insert(payload);
+    if (result.error) {
+      $('acceptAppMessage').textContent = friendlyError(result.error, 'Pilot kaydı');
+      console.error(result.error);
+      return;
+    }
+
+    const delError = await supabase.from('applications').delete().eq('id', appId);
+    if (delError.error) {
+      console.error('Başvuru silinmesi sırasında hata:', delError.error);
+      $('acceptAppMessage').textContent = 'Pilot eklendi ancak başvuru silinmedi.';
+      return;
+    }
+
+    $('acceptAppModal').hidden = true;
+    document.body.classList.remove('modal-open');
+    resetForm('acceptAppForm', 'acceptAppId', null, 'acceptAppMessage');
+    await loadApplications();
+    notify(`${payload.name} takıma eklendi!`);
+  });
+}
+
+$('acceptAppForm').addEventListener('submit', acceptApplication);
 
 /* GENEL OLAYLAR */
 
@@ -2088,6 +2162,13 @@ document.querySelectorAll('[data-close-modal]').forEach(element => {
 document.querySelectorAll('[data-close-race]').forEach(element => {
   element.addEventListener('click', () => {
     $('raceModal').hidden = true;
+    document.body.classList.remove('modal-open');
+  });
+});
+
+document.querySelectorAll('[data-close-accept-app]').forEach(element => {
+  element.addEventListener('click', () => {
+    $('acceptAppModal').hidden = true;
     document.body.classList.remove('modal-open');
   });
 });

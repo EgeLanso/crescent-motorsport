@@ -384,6 +384,29 @@
     </section>
   </div>
 
+  <div id="acceptAppModal" class="modal" hidden>
+    <div class="modal-backdrop" data-close-accept-app></div>
+    <section class="modal-card" role="dialog" aria-modal="true" aria-labelledby="acceptAppTitle">
+      <button class="modal-close" type="button" data-close-accept-app aria-label="Kapat">×</button>
+      <h2 id="acceptAppTitle">TAKIMA <span>AL</span></h2>
+      <p class="modal-intro">Başvuruyu düzenleyip takıma ekle. Uygun olmayan bilgileri temizleyebilirsin.</p>
+      <form id="acceptAppForm" class="admin-form">
+        <input id="acceptAppId" type="hidden">
+        <label>PİLOT ADI<input id="acceptAppName" required placeholder="Pilot adı"></label>
+        <label>YARIŞ NUMARASI (İSTEĞE BAĞLI)<input id="acceptAppNumber" type="number" min="0" placeholder="14"></label>
+        <label>ROL / KISA NOT<input id="acceptAppTag" placeholder="Driver"></label>
+        <label>KULLANDIĞI ARAÇ<input id="acceptAppCar" placeholder="Peugeot 9X8"></label>
+        <label class="full-width">SİMÜLATÖRLER<textarea id="acceptAppSims" rows="2" placeholder="ACC, iRacing, LMU…"></textarea></label>
+        <label class="full-width">NOT / MESAJ<textarea id="acceptAppMessage" rows="2" placeholder="Başvurudan alınan not"></textarea></label>
+        <div class="form-actions full-width">
+          <button class="primary-button" type="submit">TAKIMA EKLE <span>↗</span></button>
+          <button type="button" data-close-accept-app class="outline-button">İPTAL</button>
+          <p id="acceptAppMessage" class="form-message" role="status"></p>
+        </div>
+      </form>
+    </section>
+  </div>
+
   <div id="toast" class="toast" role="status" aria-live="polite"></div>
   <script type="module" src="app.js"></script>
 </body>
