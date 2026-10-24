@@ -841,8 +841,8 @@ button.dp-row:hover { border-color: #8f959c; background: #15181c; }
 .join-form input:not([type=checkbox]), .join-form select, .join-form textarea { padding: 12px; border: 1px solid #30343a; background: #0b0c0e; color: var(--text); font: inherit; font-size: 13px; letter-spacing: 0; }
 .join-form input:focus, .join-form select:focus, .join-form textarea:focus { outline: none; border-color: #9aa0a6; }
 .join-form .full-width { grid-column: 1 / -1; }
-.join-form .check { flex-direction: row; align-items: flex-start; gap: 10px; font-size: 11px; font-weight: 500; letter-spacing: 0; line-height: 1.5; }
-.join-form .check input { margin-top: 2px; }
+.join-form .check { flex-direction: row-reverse; align-items: center; gap: 12px; font-size: 11px; font-weight: 500; letter-spacing: 0; line-height: 1.5; }
+.join-form .check input { width: 22px; height: 22px; min-width: 22px; min-height: 22px; cursor: pointer; flex-shrink: 0; accent-color: #f1f2f3; }
 .join-form .hp { position: absolute; left: -9999px; width: 1px; height: 1px; opacity: 0; }
 @media (max-width: 650px) { .join-form { grid-template-columns: 1fr; padding: 18px; } }
 #appsBadge:not(:empty) { margin-left: 6px; padding: 1px 6px; border-radius: 99px; background: #f1f2f3; color: #090a0c; }
