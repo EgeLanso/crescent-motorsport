@@ -850,3 +850,37 @@ button.dp-row:hover { border-color: #8f959c; background: #15181c; }
 .app-new { color: #59d98e; }
 .driver-more { margin-top: 12px; color: #7d828a; font-size: 9px; font-weight: 700; letter-spacing: 1.4px; transition: color .2s; }
 .driver-card[data-driver-id]:hover .driver-more { color: #f1f2f3; }
+
+
+/* ── Crescent Motorsport · team identity refinement ── */
+:root{--bg:#0b0c0e;--panel:#121417;--panel2:#191c20;--line:#292d32;--text:#f1f1ed;--muted:#a0a5aa;--silver:#d7dadd;--accent:#d65b3c}
+html{scroll-behavior:smooth;scroll-padding-top:100px}
+body{background-color:#0b0c0e;background-image:linear-gradient(90deg,transparent 0,transparent calc(100% - 1px),#ffffff03 calc(100% - 1px));background-size:96px 100%}
+.site-header{background:rgba(10,11,13,.96);border-bottom-color:#30343a;backdrop-filter:blur(16px)}
+.brand-mark{border-color:#8d9399}
+.brand-mark span{border-color:#e0e2e4;border-right-color:transparent}
+.desktop-nav a{transition:color .18s}
+.desktop-nav a:hover{color:#fff}
+.login-button,.outline-button{border-radius:2px;border-color:#50565c}
+.login-button:hover,.outline-button:hover{border-color:#d65b3c;background:#1a1c1f}
+.hero{border-bottom-color:#30343a}
+.hero h1 span,.section-heading h2 span,.gallery-heading h2 span,.about-section h2 span,.admin-top h2 span,.modal-card h2 span{color:#aeb3b8}
+.live-dot{background:#d65b3c;box-shadow:0 0 10px #d65b3c35}
+.hero-art{background:radial-gradient(ellipse at 52% 48%,#202328 0,#111316 48%,#0b0c0e 78%);border-color:#34383e}
+.hero-number{color:#e4e5e4}
+.art-caption{color:#aeb3b8}
+.stat-card,.driver-card,.race-card,.schedule-card,.join-form,.admin-panel,.modal-card{box-shadow:none;border-radius:3px}
+.stat-card,.driver-card,.race-card,.schedule-card{border-color:#30343a;background:#121417;transition:border-color .2s,background .2s}
+.stat-card:hover,.driver-card:hover,.race-card:hover,.schedule-card:hover{border-color:#666d74;background:#15181b}
+.primary-button{background:#e3e4e2;color:#101113;border-radius:2px;transition:background .18s,color .18s}
+.primary-button:hover{background:#d65b3c;color:#fff}
+.gallery-arrow,.gallery-fullscreen,.gallery-modal-arrow,.gallery-modal-close{border-radius:2px}
+.team-gallery-frame{border-color:#34383e}
+.gallery-overlay{background:linear-gradient(180deg,transparent 40%,#08090be8 100%)}
+.join-form{border-color:#30343a;background:#121417}
+.join-form input:not([type=checkbox]),.join-form select,.join-form textarea{border-radius:2px;background:#0b0c0e;border-color:#383d43}
+.join-form input:focus,.join-form select:focus,.join-form textarea:focus{border-color:#d65b3c}
+.site-footer{border-top-color:#30343a}
+:focus-visible{outline-color:#e0e2e4}
+::selection{background:#d65b3c;color:#fff}
+@media(prefers-reduced-motion:reduce){html{scroll-behavior:auto}*,*::before,*::after{animation-duration:.01ms!important;animation-iteration-count:1!important;transition-duration:.01ms!important}}
