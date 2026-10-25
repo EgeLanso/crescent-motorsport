@@ -961,8 +961,21 @@ body{margin:0;background:#090a0b;color:var(--text);font:13px/1.6 var(--font);bac
 html{scroll-behavior:smooth;scroll-padding-top:96px}
 body{-webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility}
 button,.btn,a,input,select,textarea,.card,.result-card,.tab,.race-card,.driver-card,.stat-card,.panel,.tile{transition:background-color .24s var(--ease-premium),border-color .24s var(--ease-premium),color .24s var(--ease-premium),box-shadow .3s var(--ease-premium),transform .3s var(--ease-premium),border-radius .3s var(--ease-premium)}
-button,.btn,.tab,.language-picker select,.lang select{border-radius:999px!important}
+.login-button,.outline-button,.primary-button{border-radius:999px!important;min-height:44px;padding:0 20px;display:inline-flex;align-items:center;justify-content:center;gap:8px;white-space:nowrap}
+.admin-tab{border-radius:999px!important;padding:10px 15px;min-height:38px}
+.gallery-arrow,.gallery-fullscreen,.gallery-modal-arrow{border-radius:13px!important;display:inline-grid;place-items:center}
+.gallery-modal-close,.modal-close{border-radius:50%!important;display:grid;place-items:center}
+.record-actions button{border-radius:999px!important;min-height:34px;padding:7px 13px}
+.search-filter,.filters select,.filters input,.join-form input:not([type=checkbox]),.join-form select,.join-form textarea,.modal-card input,.modal-card select,.admin-panel input,.admin-panel select,.admin-panel textarea{border-radius:12px!important}
 input:not([type=checkbox]):not([type=radio]):not([type=range]),select,textarea{border-radius:var(--radius-control)!important}
+.text-link,.detail-link{border-radius:0!important;display:inline-flex;align-items:center}
+button{line-height:1.2}
+.primary-button{background:var(--accent);color:#15100e;border:1px solid var(--accent);font-weight:800}
+.primary-button:hover{background:#f27c55;border-color:#f27c55;color:#15100e}
+.login-button:hover,.outline-button:hover{background:#f0eee8;color:#111;border-color:#f0eee8}
+.gallery-arrow,.gallery-fullscreen,.gallery-modal-arrow,.gallery-modal-close{min-width:38px;min-height:38px;padding:0}
+.modal-close{min-width:38px;min-height:38px;padding:0}
+button:disabled{opacity:.55;cursor:not-allowed;transform:none!important}
 .card,.result-card,.inputs,.results,.race-card,.driver-card,.panel,.tile,.hero-tag,.eng-extra{border-radius:var(--radius-card)!important}
 .card,.result-card,.race-card,.driver-card,.panel,.tile{border-color:color-mix(in srgb,var(--line,#292d33) 75%,#fff 8%)}
 button:hover,.btn:hover,.tab:hover{transform:translateY(-2px)}
