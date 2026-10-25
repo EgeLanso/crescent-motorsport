@@ -884,3 +884,71 @@ body{background-color:#0b0c0e;background-image:linear-gradient(90deg,transparent
 :focus-visible{outline-color:#e0e2e4}
 ::selection{background:#d65b3c;color:#fff}
 @media(prefers-reduced-motion:reduce){html{scroll-behavior:auto}*,*::before,*::after{animation-duration:.01ms!important;animation-iteration-count:1!important;transition-duration:.01ms!important}}
+
+
+/* ═══ CRESCENT MOTORSPORT / NEW EDITORIAL IDENTITY ═══ */
+@import url('https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Manrope:wght@400;500;600;700;800&family=Oswald:wght@500;600;700&display=swap');
+:root{color-scheme:light;--bg:#efeee9;--panel:#f9f8f4;--panel2:#e4e3dc;--line:#c9c8c1;--text:#17191b;--muted:#656c72;--silver:#d6d7d2;--accent:#e33b26;--font:'Manrope',sans-serif;--display:'Oswald',sans-serif}
+body{background:#efeee9;color:#17191b;font-family:var(--font);font-size:14px;background-image:linear-gradient(90deg,transparent 0,transparent calc(100% - 1px),#15191b08 calc(100% - 1px));background-size:80px 100%}
+::selection{background:#e33b26;color:#fff}
+.topline{height:5px;background:#e33b26}
+.site-header{height:76px;background:#efeee9;border-bottom:1px solid #c9c8c1;backdrop-filter:none;padding-inline:clamp(18px,6vw,96px)}
+.brand-mark{border:2px solid #17191b;border-radius:0;transform:none;width:36px;height:36px}.brand-mark span{border-color:#17191b;border-right-color:transparent}
+.brand-copy strong{font-size:13px;letter-spacing:2.8px}.brand-copy small{color:#656c72}
+.desktop-nav a{color:#4f565c;font-size:10px;letter-spacing:1px}.desktop-nav a:hover{color:#e33b26}
+.login-button,.outline-button{border:1px solid #17191b;border-radius:0;background:transparent;color:#17191b;font-size:10px;letter-spacing:1px}.login-button:hover,.outline-button:hover{background:#17191b;color:#fff;border-color:#17191b}
+.hero{min-height:unset;padding:clamp(46px,7vw,104px) clamp(18px,8vw,128px) clamp(46px,7vw,92px);grid-template-columns:1.1fr .9fr;gap:clamp(25px,5vw,84px);background:#efeee9;border-bottom:1px solid #c9c8c1}
+.eyebrow{color:#e33b26;font-family:'DM Mono',monospace;font-size:10px;letter-spacing:1.2px}
+.live-dot{background:#e33b26;box-shadow:none;border-radius:0}
+.hero h1{font:700 clamp(54px,7.4vw,100px)/.94 'Oswald',sans-serif;letter-spacing:-.045em;text-transform:uppercase}
+.hero h1 span,.section-heading h2 span,.gallery-heading h2 span,.about-section h2 span,.admin-top h2 span,.modal-card h2 span{color:#e33b26}
+.hero-desc{color:#50575d;max-width:400px;font-size:14px;line-height:1.85}
+.text-link,.detail-link{border:0;border-bottom:2px solid #e33b26;color:#17191b;padding:0 0 10px;letter-spacing:1px}.text-link:hover,.detail-link:hover{color:#e33b26;gap:24px}
+.hero-art{height:clamp(280px,31vw,440px);border:0;background:#17191b;color:#fff}
+.art-grid{opacity:.14;background-image:linear-gradient(#ffffff 1px,transparent 1px),linear-gradient(90deg,#ffffff 1px,transparent 1px);background-size:34px 34px;mask-image:none}
+.orbit{border-color:#7e8387}.orbit-one{width:115%;height:48%;top:27%;left:-8%;transform:rotate(-28deg);border-width:1px}.orbit-two{width:96%;height:70%;top:14%;left:2%;transform:rotate(22deg);border-color:#484d51}
+.hero-number{font:700 clamp(170px,20vw,270px)/1 'Oswald',sans-serif;color:#efeee9;text-shadow:none;letter-spacing:-.07em}
+.hero-slash{background:#e33b26;width:3px;transform:rotate(24deg)}
+.art-caption{color:#d1d3d4;font-family:'DM Mono',monospace;font-size:9px;letter-spacing:1.4px}
+.stats-section,.races-section,.drivers-section,.about-section{padding:clamp(46px,6vw,84px) clamp(18px,8vw,128px);border-bottom:1px solid #c9c8c1}
+.team-gallery{margin-bottom:60px}
+.gallery-heading h2,.section-heading h2,.about-section h2{font:600 clamp(38px,5vw,66px)/.98 'Oswald',sans-serif;letter-spacing:-.035em;text-transform:uppercase}
+.gallery-heading h2 span,.section-heading h2 span{color:#e33b26}
+.gallery-arrow,.gallery-fullscreen{border:1px solid #bcbdb7;background:transparent;color:#17191b;border-radius:0}.gallery-arrow:hover,.gallery-fullscreen:hover{background:#17191b;color:#fff;border-color:#17191b}
+.team-gallery-frame{border:0;background:#17191b}
+.gallery-overlay{background:linear-gradient(180deg,transparent 30%,#101214ed 100%)}
+.gallery-live{background:#e33b26;color:#fff;border-radius:0}
+.stats-grid{gap:0;border:1px solid #c9c8c1;background:#f9f8f4}
+.stat-card{border:0;border-right:1px solid #c9c8c1;border-radius:0;background:transparent;padding:25px}
+.stat-card:last-child{border-right:0}.stat-label{color:#656c72;font-family:'DM Mono',monospace;font-size:9px;letter-spacing:1px}.stat-card strong{font:600 clamp(34px,4vw,52px)/1 'Oswald',sans-serif;color:#17191b}
+.race-list{gap:8px}
+.race-card,.driver-card,.schedule-card{border:1px solid #c9c8c1;border-radius:0;background:#f9f8f4;box-shadow:none;transition:border-color .2s,transform .2s}
+.race-card:hover,.driver-card:hover,.schedule-card:hover{border-color:#17191b;transform:translateY(-2px);background:#fff}
+.race-position,.driver-number{font-family:'Oswald',sans-serif;color:#e33b26}
+.race-tag{border-radius:0;background:#17191b;color:#fff}
+.filters{gap:10px}.search-filter,.filters select,.filters input{border-radius:0;background:#f9f8f4;color:#17191b;border:1px solid #c9c8c1}
+.driver-grid{gap:12px}
+.driver-card{padding:22px}
+.driver-name{font:600 28px/1.1 'Oswald',sans-serif;text-transform:uppercase}
+.driver-tag{font-family:'DM Mono',monospace;color:#e33b26;letter-spacing:.7px}
+.join-section{background:#17191b;color:#f5f4ef;padding:clamp(45px,6vw,84px) clamp(18px,8vw,128px)}
+.join-section .eyebrow{color:#f06450}.join-section h2{font:600 clamp(38px,5vw,64px)/1 'Oswald',sans-serif;text-transform:uppercase}
+.join-section .muted,.join-section p{color:#b8bcbf}
+.join-form{background:#202327;border:1px solid #3b3e42;border-radius:0;box-shadow:none}
+.join-form label{color:#d4d6d7}.join-form input:not([type=checkbox]),.join-form select,.join-form textarea{border-radius:0;background:#111315;border:1px solid #45494d;color:#f5f4ef}
+.join-form input:focus,.join-form select:focus,.join-form textarea:focus{border-color:#e33b26;box-shadow:0 0 0 3px #e33b2625}
+.primary-button{border-radius:0;background:#e33b26;color:#fff;font-weight:800;letter-spacing:1px;text-transform:uppercase}.primary-button:hover{background:#ff4b35}
+.about-section{background:#f9f8f4}
+.principles{gap:0;border-top:1px solid #c9c8c1}
+.principles>*{border-bottom:1px solid #c9c8c1;border-radius:0}
+.site-footer{background:#efeee9;border-top:0;color:#656c72}
+.footer-brand{color:#17191b}
+.modal-card,.admin-panel{border-radius:0;background:#f9f8f4;border:1px solid #c9c8c1;color:#17191b;box-shadow:10px 10px 0 #17191b14}
+.modal-card input,.modal-card select,.admin-panel input,.admin-panel select,.admin-panel textarea{border-radius:0;background:#efeee9;color:#17191b;border:1px solid #c9c8c1}
+.admin-tabs{border-bottom:1px solid #c9c8c1}.admin-tab{border-radius:0}.admin-tab.active{background:#17191b;color:#fff}
+.admin-record,.race-detail-card{border-radius:0;background:#efeee9;border-color:#c9c8c1}
+.toast{border-radius:0;background:#17191b;color:#fff}
+:focus-visible{outline:3px solid #e33b26;outline-offset:3px}
+@media(max-width:850px){.hero{grid-template-columns:1fr;gap:32px}.hero-art{height:300px}.desktop-nav{gap:12px}.stats-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.stat-card:nth-child(2){border-right:0}.stat-card:nth-child(-n+2){border-bottom:1px solid #c9c8c1}}
+@media(max-width:620px){.site-header{height:auto;min-height:72px;flex-wrap:wrap;padding-block:14px}.desktop-nav{order:3;width:100%;overflow-x:auto;padding:8px 0}.hero{padding-top:40px}.hero h1{font-size:58px}.hero-art{height:250px}.stats-section,.races-section,.drivers-section,.about-section{padding-block:42px}.join-section{padding-block:42px}}
+@media(prefers-reduced-motion:reduce){html{scroll-behavior:auto}*,*::before,*::after{animation:none!important;transition:none!important}}
