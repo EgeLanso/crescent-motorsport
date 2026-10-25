@@ -238,7 +238,7 @@ function friendlyError(error, what = 'İşlem') {
   const text = String(error?.message || '');
 
   if (code === '23505') return 'Bu isimde bir kayıt zaten var. Farklı bir ad dene.';
-  if (code === '23514') return 'Girilen değerlerden biri veritabanı kurallarına uymuyor. Klasman adını kontrol et. Yeni klasman adları için veritabanı güncellemesi (SQL 01) yapılmış olmalı.';
+  if (code === '23514') return 'Girilen değerlerden biri veritabanı kurallarına uymuyor. Alanları kontrol et. Sorun sürerse güncel schema.sql dosyasını Supabase SQL Editor\'da bir kez çalıştır.';
   if (code === '23503') return 'Seçilen pilot bulunamadı. Sayfayı yenileyip tekrar dene.';
   if (code === '23502') return 'Zorunlu bir alan boş bırakılmış.';
   if (code === '42501' || /row-level security|permission denied|jwt/i.test(text)) {
@@ -1805,6 +1805,7 @@ document.addEventListener('keydown', event => {
   if (event.key === 'Escape') {
     $('loginModal').hidden = true;
     $('raceModal').hidden = true;
+    $('acceptAppModal').hidden = true;
     closeDriverProfile();
     closePhotoModal();
     closeGalleryModal();
@@ -2023,7 +2024,7 @@ async function loadApplications() {
     console.error('Başvurular yüklenemedi:', error);
     $('adminAppsList').innerHTML = empty(
       'BAŞVURULAR YÜKLENEMEDİ',
-      error.code === '42P01' ? 'applications tablosu yok. yeni_ozellikler.sql dosyasını Supabase SQL Editor\'da çalıştır.' : 'Bağlantıyı kontrol et.'
+      error.code === '42P01' ? 'applications tablosu yok. schema.sql dosyasını Supabase SQL Editor\'da çalıştır.' : 'Bağlantıyı kontrol et.'
     );
     return;
   }
@@ -2088,7 +2089,7 @@ function openAcceptAppModal(app) {
   $('acceptAppCar').value = app.main_car || '';
   $('acceptAppSims').value = app.sims || '';
   $('acceptAppMessage').value = app.message || '';
-  $('acceptAppMessage').textContent = '';
+  $('acceptAppStatus').textContent = '';
   $('acceptAppModal').hidden = false;
   document.body.classList.add('modal-open');
   $('acceptAppName').focus();
@@ -2098,11 +2099,11 @@ async function acceptApplication(event) {
   event.preventDefault();
   if (!isAdmin || !supabase) return;
 
-  await runSave($('acceptAppForm'), 'acceptAppMessage', async () => {
+  await runSave($('acceptAppForm'), 'acceptAppStatus', async () => {
     const appId = $('acceptAppId').value;
     const app = applications.find(a => String(a.id) === String(appId));
     if (!app) {
-      $('acceptAppMessage').textContent = 'Başvuru bulunamadı.';
+      $('acceptAppStatus').textContent = 'Başvuru bulunamadı.';
       return;
     }
 
@@ -2120,13 +2121,13 @@ async function acceptApplication(event) {
     };
 
     if (!payload.name) {
-      $('acceptAppMessage').textContent = 'Pilot adı boş bırakılamaz.';
+      $('acceptAppStatus').textContent = 'Pilot adı boş bırakılamaz.';
       return;
     }
 
     const result = await supabase.from('drivers').insert(payload);
     if (result.error) {
-      $('acceptAppMessage').textContent = friendlyError(result.error, 'Pilot kaydı');
+      $('acceptAppStatus').textContent = friendlyError(result.error, 'Pilot kaydı');
       console.error(result.error);
       return;
     }
@@ -2134,13 +2135,14 @@ async function acceptApplication(event) {
     const delError = await supabase.from('applications').delete().eq('id', appId);
     if (delError.error) {
       console.error('Başvuru silinmesi sırasında hata:', delError.error);
-      $('acceptAppMessage').textContent = 'Pilot eklendi ancak başvuru silinmedi.';
+      $('acceptAppStatus').textContent = 'Pilot eklendi ancak başvuru silinmedi.';
       return;
     }
 
     $('acceptAppModal').hidden = true;
     document.body.classList.remove('modal-open');
-    resetForm('acceptAppForm', 'acceptAppId', null, 'acceptAppMessage');
+    resetForm('acceptAppForm', 'acceptAppId', null, 'acceptAppStatus');
+    await refreshData();
     await loadApplications();
     notify(`${payload.name} takıma eklendi!`);
   });
