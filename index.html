@@ -409,5 +409,8 @@
 
   <div id="toast" class="toast" role="status" aria-live="polite"></div>
   <script type="module" src="app.js"></script>
+<script>
+(()=>{const start=()=>{const selectors='.card,.result-card,.race-card,.driver-card,.panel,.tile,.section-gap,.feature,.content-section';const nodes=[...document.querySelectorAll(selectors)].filter(el=>!el.closest('.eng-extra'));if(!nodes.length)return;nodes.forEach(el=>el.classList.add('scroll-reveal'));document.body.classList.add('reveal-ready');if(!('IntersectionObserver'in window)){nodes.forEach(el=>el.classList.add('is-visible'));return}const io=new IntersectionObserver(entries=>entries.forEach(entry=>{if(entry.isIntersecting){entry.target.classList.add('is-visible');io.unobserve(entry.target)}}),{threshold:.08,rootMargin:'0px 0px -36px 0px'});nodes.forEach(el=>io.observe(el))};if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',start,{once:true});else start()})();
+</script>
 </body>
 </html>
